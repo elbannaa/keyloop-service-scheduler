@@ -9,7 +9,7 @@ const dealershipsService = new DealershipsService();
 export class DealershipsController {
   async createDealership(req: AuthRequest, res: Response): Promise<void> {
     try {
-      const { name, address, phone } = req.body;
+      const { name, address } = req.body;
 
       if (!name || !address) {
         const response: ApiResponse<null> = {
@@ -22,7 +22,7 @@ export class DealershipsController {
         return;
       }
 
-      const dealership = await dealershipsService.createDealership({ name, address, phone });
+      const dealership = await dealershipsService.createDealership({ name, address });
       const responseAPI: ApiResponse<{ dealership: typeof dealership }> = {
         success: true,
         code: 201,
@@ -55,6 +55,7 @@ export class DealershipsController {
         vehicleYear: vehicleYear ? parseInt(vehicleYear, 10) : undefined,
         minTechnicians: minTechnicians ? parseInt(minTechnicians, 10) : undefined,
         search,
+        requesterRole: req.user!.role,
       });
 
       const responseAPI: ApiResponse<{ dealerships: typeof dealerships }> = {
@@ -100,12 +101,12 @@ export class DealershipsController {
     try {
       const { name, address, phone } = req.body;
 
-      if (name === undefined && address === undefined && phone === undefined) {
+      if (name === undefined && address === undefined) {
         const response: ApiResponse<null> = {
           success: false,
           code: 400,
           message: Messages.VALIDATION_ERROR,
-          errors: { detail: 'At least one of name, address, or phone is required', code: ErrorCode.VALIDATION_ERROR }
+          errors: { detail: 'At least one of name or address is required', code: ErrorCode.VALIDATION_ERROR }
         };
         res.status(400).json(response);
         return;
@@ -115,7 +116,7 @@ export class DealershipsController {
         id,
         req.user!.id,
         req.user!.role,
-        { name, address, phone }
+        { name, address }
       );
 
       const responseAPI: ApiResponse<{ dealership: typeof dealership }> = {
@@ -223,7 +224,7 @@ export class DealershipsController {
   async createTechnician(req: AuthRequest, res: Response): Promise<void> {
     const dealershipId = req.params['id'] as string;
     try {
-      const { name, phone } = req.body;
+      const { name } = req.body;
 
       if (!name) {
         const response: ApiResponse<null> = {
@@ -240,7 +241,7 @@ export class DealershipsController {
         dealershipId,
         req.user!.id,
         req.user!.role,
-        { name, phone }
+        { name }
       );
 
       const responseAPI: ApiResponse<{ technician: typeof technician }> = {

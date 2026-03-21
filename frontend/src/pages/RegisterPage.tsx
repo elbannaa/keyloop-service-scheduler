@@ -20,7 +20,6 @@ const RegisterPage: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [phone, setPhone] = useState('');
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { loading, error, token } = useAppSelector((state) => state.auth);
@@ -39,7 +38,7 @@ const RegisterPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    dispatch(registerUser({ name, email, password, phone: phone || undefined }));
+    dispatch(registerUser({ name, email, password }));
   };
 
   return (
@@ -116,19 +115,6 @@ const RegisterPage: React.FC = () => {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="phone">
-                  Phone <span className="text-muted-foreground/60 font-normal">(optional)</span>
-                </Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+1 (234) 567-890"
-                  className="h-11 md:h-10"
-                />
-              </div>
 
               <Button
                 type="submit"

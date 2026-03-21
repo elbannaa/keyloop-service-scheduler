@@ -11,6 +11,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/components/layout/SidebarProvider';
 import { Role } from '@/constants/role';
+import { Separator } from '../ui/separator';
 
 interface NavItemProps {
   to: string;
@@ -34,10 +35,10 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, active, disabl
     )}
   >
     <div className="flex items-center gap-3">
-      <Icon className={cn("h-5 w-5", active ? "text-primary-foreground" : "text-muted-foreground group-hover:text-primary")} />
-      {!collapsed && <span className="font-medium text-sm transition-opacity duration-200">{label}</span>}
+      <Icon className={cn("h-4 w-4", active ? "text-primary-foreground" : "text-muted-foreground group-hover:text-primary")} />
+      {!collapsed && <span className="font-semibold text-xs transition-opacity duration-200">{label}</span>}
     </div>
-    {active && !collapsed && <ChevronRight className="h-4 w-4 opacity-70" />}
+    {active && !collapsed && <ChevronRight className="h-3 w-3 opacity-70" />}
   </Link>
 );
 
@@ -62,12 +63,19 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className }) => {
       show: user?.role === Role.ADMIN,
     },
     {
+      label: 'Book Service',
+      to: '/booking',
+      icon: CalendarDays,
+      active: location.pathname === '/booking',
+      show: user?.role === Role.USER,
+    },
+    {
       label: 'Appointments',
       to: '/appointments',
-      icon: CalendarDays,
+      icon: LayoutDashboard,
       active: location.pathname === '/appointments',
-      show: true,
-      disabled: true, // Placeholder for now
+      show: user?.role === Role.ADMIN || user?.role === Role.MANAGER,
+      disabled: true,
     },
   ];
 
@@ -81,23 +89,25 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className }) => {
         className
       )}
     >
-      <div className={cn("p-6", !open && "px-4")}>
+      <div className='p-4'>
         <Link to="/" className="flex items-center gap-3">
           <div className="flex items-center justify-center min-w-8 h-8 rounded-lg bg-primary">
-            <CalendarDays className="w-5 h-5 text-primary-foreground" />
+            <CalendarDays className="w-4 h-4 text-primary-foreground" />
           </div>
           {open && (
-            <span className="font-bold text-xl tracking-tight text-foreground transition-opacity duration-300">
-              Keyloop
-            </span>
+            <div className="flex flex-col items-start leading-none transition-opacity duration-300">
+              <span className="font-bold text-lg tracking-tight text-foreground">
+                Keyloop
+              </span>
+            </div>
           )}
         </Link>
       </div>
-
+      <Separator />
       <nav className="flex-1 px-3 space-y-8 mt-4 overflow-x-hidden">
         <div>
           {open && (
-            <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+            <h3 className="px-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-4 opacity-60">
               Main Menu
             </h3>
           )}
@@ -118,7 +128,7 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className }) => {
 
         <div>
           {open && (
-            <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+            <h3 className="px-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-4 opacity-60">
               System
             </h3>
           )}
@@ -134,18 +144,6 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className }) => {
           </div>
         </div>
       </nav>
-
-      <div className="p-4 border-t border-border mt-auto">
-        <div className={cn("bg-muted/50 rounded-xl p-4", !open && "p-2 text-center")}>
-          {open ? (
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Need help? Check our <span className="text-primary font-medium cursor-pointer">Documentation</span>.
-            </p>
-          ) : (
-            <div className="text-primary font-bold text-xs uppercase cursor-pointer">?</div>
-          )}
-        </div>
-      </div>
     </aside>
   );
 };

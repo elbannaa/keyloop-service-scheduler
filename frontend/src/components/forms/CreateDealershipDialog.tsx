@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 interface CreateDealershipDialogProps {
   open: boolean;
@@ -23,7 +24,6 @@ export const CreateDealershipDialog: React.FC<CreateDealershipDialogProps> = ({ 
   const [formData, setFormData] = useState({
     name: '',
     address: '',
-    phone: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -43,7 +43,7 @@ export const CreateDealershipDialog: React.FC<CreateDealershipDialogProps> = ({ 
     try {
       await dispatch(createDealership(formData)).unwrap();
       onOpenChange(false);
-      setFormData({ name: '', address: '', phone: '' });
+      setFormData({ name: '', address: '' });
     } catch (err: any) {
       setErrors({ submit: err || 'Failed to create dealership' });
     } finally {
@@ -57,50 +57,41 @@ export const CreateDealershipDialog: React.FC<CreateDealershipDialogProps> = ({ 
         <DialogHeader>
           <DialogTitle>Add New Dealership</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="dl-name">Dealership Name</Label>
+            <Label htmlFor="dl-name" className="text-xs font-semibold">Dealership Name</Label>
             <Input
               id="dl-name"
               placeholder="Keyloop City Center"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className={errors.name ? 'border-destructive' : ''}
+              className={cn("text-xs h-8", errors.name ? 'border-destructive' : '')}
             />
-            {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
+            {errors.name && <p className="text-[10px] text-destructive">{errors.name}</p>}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="dl-address">Location Address</Label>
+            <Label htmlFor="dl-address" className="text-xs font-semibold">Location Address</Label>
             <Input
               id="dl-address"
               placeholder="123 Main St, London"
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              className={errors.address ? 'border-destructive' : ''}
+              className={cn("text-xs h-8", errors.address ? 'border-destructive' : '')}
             />
-            {errors.address && <p className="text-xs text-destructive">{errors.address}</p>}
+            {errors.address && <p className="text-[10px] text-destructive">{errors.address}</p>}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="dl-phone">Contact Phone</Label>
-            <Input
-              id="dl-phone"
-              placeholder="+44 20 7123 4567"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            />
-          </div>
 
           {errors.submit && (
-            <p className="text-sm text-destructive bg-destructive/10 p-2 rounded">{errors.submit}</p>
+            <p className="text-[10px] text-destructive bg-destructive/10 p-2 rounded">{errors.submit}</p>
           )}
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" className="text-xs h-8" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading} className="text-xs h-8">
               {loading ? 'Adding...' : 'Add Dealership'}
             </Button>
           </DialogFooter>

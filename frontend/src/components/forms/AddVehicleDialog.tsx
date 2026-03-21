@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 interface AddVehicleDialogProps {
   dealershipId: string;
@@ -59,50 +60,50 @@ export const AddVehicleDialog: React.FC<AddVehicleDialogProps> = ({ dealershipId
         <DialogHeader>
           <DialogTitle>Add Vehicle</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="veh-make">Make</Label>
+              <Label htmlFor="veh-make" className="text-xs font-semibold">Make</Label>
               <Input
                 id="veh-make"
                 placeholder="Toyota"
                 value={formData.make}
                 onChange={(e) => setFormData({ ...formData, make: e.target.value })}
-                className={errors.make ? 'border-destructive' : ''}
+                className={cn("text-xs h-8", errors.make ? 'border-destructive' : '')}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="veh-model">Model</Label>
+              <Label htmlFor="veh-model" className="text-xs font-semibold">Model</Label>
               <Input
                 id="veh-model"
                 placeholder="Camry"
                 value={formData.model}
                 onChange={(e) => setFormData({ ...formData, model: e.target.value })}
-                className={errors.model ? 'border-destructive' : ''}
+                className={cn("text-xs h-8", errors.model ? 'border-destructive' : '')}
               />
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="veh-year">Year</Label>
+            <Label htmlFor="veh-year" className="text-xs font-semibold">Year</Label>
             <Input
               id="veh-year"
               type="number"
               value={formData.year}
               onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value, 10) })}
-              className={errors.year ? 'border-destructive' : ''}
+              className={cn("text-xs h-8", errors.year ? 'border-destructive' : '')}
             />
-            {errors.year && <p className="text-xs text-destructive">{errors.year}</p>}
+            {errors.year && <p className="text-[10px] text-destructive">{errors.year}</p>}
           </div>
 
           {errors.submit && (
-            <p className="text-sm text-destructive bg-destructive/10 p-2 rounded">{errors.submit}</p>
+            <p className="text-[10px] text-destructive bg-destructive/10 p-2 rounded">{errors.submit}</p>
           )}
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" className="text-xs h-8" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading} className="text-xs h-8">
               {loading ? 'Adding...' : 'Add Vehicle'}
             </Button>
           </DialogFooter>

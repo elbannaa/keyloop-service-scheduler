@@ -7,13 +7,12 @@ interface CreateUserInput {
   email: string;
   password: string;
   name: string;
-  phone?: string;
   role: Role;
 }
 
 interface UpdateUserInput {
   name?: string;
-  phone?: string;
+  role?: Role;
 }
 
 interface ListUsersQuery {
@@ -25,7 +24,7 @@ interface ListUsersQuery {
 
 export class UsersService {
   async createUser(input: CreateUserInput) {
-    const { email, password, name, phone, role } = input;
+    const { email, password, name, role } = input;
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
@@ -35,7 +34,7 @@ export class UsersService {
     const hashedPassword = await bcrypt.hash(password, 12);
 
     const user = await prisma.user.create({
-      data: { email, password: hashedPassword, name, phone, role },
+      data: { email, password: hashedPassword, name, role },
     });
 
     return this.sanitizeUser(user);
@@ -64,7 +63,6 @@ export class UsersService {
           id: true,
           email: true,
           name: true,
-          phone: true,
           role: true,
           isActive: true,
           createdAt: true,
@@ -92,7 +90,6 @@ export class UsersService {
         id: true,
         email: true,
         name: true,
-        phone: true,
         role: true,
         isActive: true,
         createdAt: true,
@@ -117,13 +114,12 @@ export class UsersService {
       where: { id },
       data: {
         ...(input.name !== undefined && { name: input.name }),
-        ...(input.phone !== undefined && { phone: input.phone }),
+        ...(input.role !== undefined && { role: input.role }),
       },
       select: {
         id: true,
         email: true,
         name: true,
-        phone: true,
         role: true,
         isActive: true,
         createdAt: true,
@@ -147,7 +143,6 @@ export class UsersService {
         id: true,
         email: true,
         name: true,
-        phone: true,
         role: true,
         isActive: true,
         createdAt: true,

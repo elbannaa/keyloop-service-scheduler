@@ -105,12 +105,12 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                       <DropdownMenuLabel className="font-normal">
                         <div className="flex flex-col space-y-1">
                           <div className="flex items-center gap-2 justify-between">
-                            <p className="text-md font-medium leading-none">{user.name}</p>
-                            <Badge variant="outline" className="text-xs w-fit">
+                            <p className="text-xs font-bold leading-none">{user.name}</p>
+                            <Badge variant="outline" className="text-[10px] h-4 w-fit px-1">
                               {user.role}
                             </Badge>
                           </div>
-                          <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                          <p className="text-[10px] leading-none text-muted-foreground">{user.email}</p>
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
@@ -120,12 +120,12 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                         <span>Profile</span>
                       </DropdownMenuItem> */}
                       <DropdownMenuItem
-                        className="flex items-center gap-2 text-destructive focus:text-destructive"
+                        className="flex items-center gap-2 text-destructive focus:text-destructive cursor-pointer h-8 text-xs"
                         onClick={handleLogout}
                         disabled={loading}
                       >
-                        <LogOut className="h-4 w-4" />
-                        <span className="text-xs">Log out</span>
+                        <LogOut className="h-3 w-3" />
+                        <span>Log out</span>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

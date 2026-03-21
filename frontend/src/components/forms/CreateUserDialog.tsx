@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 
 interface CreateUserDialogProps {
   open: boolean;
@@ -31,7 +32,6 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onOpen
     name: '',
     email: '',
     role: 'USER',
-    phone: '',
     password: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -60,7 +60,7 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onOpen
     try {
       await dispatch(createUser(formData)).unwrap();
       onOpenChange(false);
-      setFormData({ name: '', email: '', role: 'USER', phone: '', password: '' });
+      setFormData({ name: '', email: '', role: 'USER', password: '' });
     } catch (err: any) {
       setErrors({ submit: err || 'Failed to create user' });
     } finally {
@@ -74,81 +74,72 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onOpen
         <DialogHeader>
           <DialogTitle>Create New User</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="create-name">Full Name</Label>
+            <Label htmlFor="create-name" className="text-xs font-semibold">Full Name</Label>
             <Input
               id="create-name"
               placeholder="John Doe"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className={errors.name ? 'border-destructive' : ''}
+              className={cn("text-xs h-8", errors.name ? 'border-destructive' : '')}
             />
-            {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
+            {errors.name && <p className="text-[10px] text-destructive">{errors.name}</p>}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="create-email">Email Address</Label>
+            <Label htmlFor="create-email" className="text-xs font-semibold">Email Address</Label>
             <Input
               id="create-email"
               type="email"
               placeholder="john@example.com"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className={errors.email ? 'border-destructive' : ''}
+              className={cn("text-xs h-8", errors.email ? 'border-destructive' : '')}
             />
-            {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
+            {errors.email && <p className="text-[10px] text-destructive">{errors.email}</p>}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="create-role">Role</Label>
+            <Label htmlFor="create-role" className="text-xs font-semibold">Role</Label>
             <Select
               value={formData.role}
               onValueChange={(val) => setFormData({ ...formData, role: val })}
             >
-              <SelectTrigger id="create-role">
+              <SelectTrigger id="create-role" className="text-xs h-8">
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="USER">User</SelectItem>
-                <SelectItem value="MANAGER">Manager</SelectItem>
-                <SelectItem value="ADMIN">Admin</SelectItem>
+                <SelectItem value="USER" className="text-xs">User</SelectItem>
+                <SelectItem value="MANAGER" className="text-xs">Manager</SelectItem>
+                <SelectItem value="ADMIN" className="text-xs">Admin</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="create-phone">Phone (Optional)</Label>
-            <Input
-              id="create-phone"
-              placeholder="+1 234 567 890"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            />
-          </div>
 
           <div className="space-y-2">
-            <Label htmlFor="create-password">Password (Optional)</Label>
+            <Label htmlFor="create-password" className="text-xs font-semibold">Password (Optional)</Label>
             <Input
               id="create-password"
               type="password"
               placeholder="Leave blank for default"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className={errors.password ? 'border-destructive' : ''}
+              className={cn("text-xs h-8", errors.password ? 'border-destructive' : '')}
             />
-            {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
+            {errors.password && <p className="text-[10px] text-destructive">{errors.password}</p>}
           </div>
 
           {errors.submit && (
-            <p className="text-sm text-destructive bg-destructive/10 p-2 rounded">{errors.submit}</p>
+            <p className="text-[10px] text-destructive bg-destructive/10 p-2 rounded">{errors.submit}</p>
           )}
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" className="text-xs h-8" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading} className="text-xs h-8">
               {loading ? 'Creating...' : 'Create User'}
             </Button>
           </DialogFooter>

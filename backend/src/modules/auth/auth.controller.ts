@@ -8,7 +8,7 @@ const authService = new AuthService();
 export class AuthController {
   async register(req: Request, res: Response): Promise<void> {
     try {
-      const { email, password, name, phone } = req.body;
+      const { email, password, name } = req.body;
 
       // Validation
       if (!email || !password || !name) {
@@ -33,7 +33,7 @@ export class AuthController {
         return;
       }
 
-      const result = await authService.register({ email, password, name, phone });
+      const result = await authService.register({ email, password, name });
       
       const response: ApiResponse<typeof result> = {
         success: true,

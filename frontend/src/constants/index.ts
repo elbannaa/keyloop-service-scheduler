@@ -21,4 +21,5 @@ export const API_ROUTES = {
   AUTH_ME: '/auth/me',
   USERS: '/users',
   DEALERSHIPS: '/dealerships',
+  APPOINTMENTS: '/appointments',
 };

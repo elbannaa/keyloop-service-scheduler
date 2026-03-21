@@ -59,6 +59,11 @@ export const authGuard = async (
       return;
     }
 
+    if (!user.isActive) {
+      res.status(401).json({ error: 'Unauthorized', message: 'Account is deactivated' });
+      return;
+    }
+
     req.user = {
       id: decoded.userId,
       email: decoded.email,

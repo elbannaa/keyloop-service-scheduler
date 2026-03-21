@@ -33,11 +33,18 @@ export const MobileNav: React.FC = () => {
       show: user?.role === Role.ADMIN,
     },
     {
+      label: 'Book Service',
+      to: '/booking',
+      icon: CalendarDays,
+      active: location.pathname === '/booking',
+      show: user?.role === Role.USER,
+    },
+    {
       label: 'Appointments',
       to: '/appointments',
       icon: CalendarDays,
       active: location.pathname === '/appointments',
-      show: true,
+      show: user?.role === Role.ADMIN || user?.role === Role.MANAGER,
       disabled: true,
     },
   ];

@@ -65,7 +65,7 @@ keyloop/
         │   └── ProtectedRoute.tsx  # Redirects to /login if unauthenticated
         └── pages/
             ├── LoginPage.tsx       # Email/password login form
-            ├── RegisterPage.tsx    # Name/email/password/phone form
+            ├── RegisterPage.tsx    # Name/email/password form
             └── HomePage.tsx        # White page with nav bar + logout
 ```
 

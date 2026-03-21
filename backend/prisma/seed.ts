@@ -3,20 +3,28 @@ import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
+const seedAdmin = {
+  email: process.env.SEED_SUPER_ADMIN_EMAIL,
+  password: process.env.SEED_SUPER_ADMIN_PASSWORD,
+}
+
 async function main() {
-  const adminEmail = 'admin@gmail.com';
+  if (!seedAdmin.email || !seedAdmin.password) {
+    console.error('❌ Missing seed admin credentials');
+    process.exit(1);
+  }
+
   const existingAdmin = await prisma.user.findUnique({
-    where: { email: adminEmail },
+    where: { email: seedAdmin.email },
   });
 
   if (!existingAdmin) {
-    const hashedPassword = await bcrypt.hash('admin123', 12);
+    const hashedPassword = await bcrypt.hash(seedAdmin.password, 12);
     const admin = await prisma.user.create({
       data: {
-        email: adminEmail,
+        email: seedAdmin.email,
         password: hashedPassword,
         name: 'System Admin',
-        phone: '+1234567890',
         role: Role.ADMIN,
       },
     });

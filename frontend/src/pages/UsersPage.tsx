@@ -21,6 +21,8 @@ import {
 } from '@/components/ui/select';
 import { Search, UserPlus, RefreshCw, MoreVertical, Shield } from 'lucide-react';
 import { CreateUserDialog } from '@/components/forms/CreateUserDialog';
+import { EditUserDialog } from '@/components/forms/EditUserDialog';
+import type { UserData } from '@/store/usersSlice';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,6 +41,7 @@ const UsersPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserData | null>(null);
 
   const debouncedFetch = useCallback(
     debounce((query: { search?: string; role?: string }) => {
@@ -81,30 +84,30 @@ const UsersPage: React.FC = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search by name or email..."
-              className="pl-9"
+              className="pl-9 text-xs h-8"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <div className="w-full sm:w-48">
             <Select value={roleFilter} onValueChange={setRoleFilter}>
-              <SelectTrigger>
+              <SelectTrigger className="text-xs h-8">
                 <SelectValue placeholder="All Roles" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Roles</SelectItem>
-                <SelectItem value="ADMIN">Admin</SelectItem>
-                <SelectItem value="MANAGER">Manager</SelectItem>
-                <SelectItem value="USER">User</SelectItem>
+                <SelectItem value="all" className="text-xs">All Roles</SelectItem>
+                <SelectItem value="ADMIN" className="text-xs">Admin</SelectItem>
+                <SelectItem value="MANAGER" className="text-xs">Manager</SelectItem>
+                <SelectItem value="USER" className="text-xs">User</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => dispatch(fetchUsers({ search, role: roleFilter === 'all' ? undefined : roleFilter }))} disabled={loading}>
-              <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => dispatch(fetchUsers({ search, role: roleFilter === 'all' ? undefined : roleFilter }))} disabled={loading}>
+              <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
             </Button>
-            <Button onClick={() => setIsCreateOpen(true)} className="flex items-center gap-2">
-              <UserPlus className="h-4 w-4" />
+            <Button onClick={() => setIsCreateOpen(true)} className="flex items-center gap-2 text-xs h-8">
+              <UserPlus className="h-3 w-3" />
               <span>Create User</span>
             </Button>
           </div>
@@ -122,12 +125,12 @@ const UsersPage: React.FC = () => {
           <Table>
             <TableHeader className="bg-muted/50">
               <TableRow>
-                <TableHead className="w-[200px]">User</TableHead>
-                <TableHead className="hidden md:table-cell">Contact</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="hidden lg:table-cell">Joined</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="w-[200px] text-xs font-semibold tracking-wider">User</TableHead>
+                <TableHead className="hidden md:table-cell text-xs font-semibold tracking-wider">Email</TableHead>
+                <TableHead className="text-xs font-semibold tracking-wider">Role</TableHead>
+                <TableHead className="text-xs font-semibold tracking-wider">Status</TableHead>
+                <TableHead className="hidden lg:table-cell text-xs font-semibold tracking-wider">Joined</TableHead>
+                <TableHead className="text-right text-xs font-semibold tracking-wider">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -141,29 +144,21 @@ const UsersPage: React.FC = () => {
               {users.map((u) => (
                 <TableRow key={u.id} className="hover:bg-muted/30">
                   <TableCell>
-                    <div className="flex items-center gap-3">
-                      <div className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center font-semibold text-xs border border-border">
-                        {u.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-semibold text-foreground leading-none">{u.name}</span>
-                        <span className="text-[10px] md:hidden text-muted-foreground mt-1 truncate max-w-[120px]">{u.email}</span>
-                      </div>
+                    <div className="flex flex-col">
+                      <span className="leading-none text-xs">{u.name}</span>
+                      <span className="text-[10px] md:hidden text-muted-foreground mt-1 truncate max-w-[120px]">{u.email}</span>
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
-                    <div className="flex flex-col text-sm">
-                      <span className="text-foreground">{u.email}</span>
-                      {u.phone && <span className="text-muted-foreground text-xs">{u.phone}</span>}
-                    </div>
+                    <span className="text-foreground text-xs">{u.email}</span>
                   </TableCell>
                   <TableCell>
-                    <Badge variant='outline' className="font-bold tracking-tight">
-                      {u.role}
+                    <Badge variant='secondary' className="text-xs rounded-full">
+                      {u.role.charAt(0).toUpperCase() + u.role.slice(1).toLowerCase()}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={u.isActive ? "default" : "destructive"} className="text-[10px] uppercase">
+                    <Badge variant={u.isActive ? "default" : "destructive"} className="text-xs rounded-full">
                       {u.isActive ? "Active" : "Inactive"}
                     </Badge>
                   </TableCell>
@@ -178,10 +173,10 @@ const UsersPage: React.FC = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-40">
-                        <DropdownMenuItem onClick={() => handleToggleStatus(u.id, u.isActive)}>
-                          {u.isActive ? 'Deactivate User' : 'Activate User'}
+                        <DropdownMenuItem className="text-xs" onClick={() => setEditingUser(u)}>Edit User</DropdownMenuItem>
+                        <DropdownMenuItem className="text-xs" onClick={() => handleToggleStatus(u.id, u.isActive)}>
+                          {u.isActive ? <span className="text-destructive">Deactivate User</span> : <span className="text-green-500">Activate User</span>}
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">Delete User</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -193,6 +188,11 @@ const UsersPage: React.FC = () => {
       </div>
 
       <CreateUserDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
+      <EditUserDialog
+        user={editingUser}
+        open={!!editingUser}
+        onOpenChange={(open) => !open && setEditingUser(null)}
+      />
     </div>
   );
 };

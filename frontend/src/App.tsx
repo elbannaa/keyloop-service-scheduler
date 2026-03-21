@@ -5,6 +5,7 @@ import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import UsersPage from '@/pages/UsersPage';
 import DealershipsPage from '@/pages/DealershipsPage';
+import BookingPage from '@/pages/BookingPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 import { ProtectedRoute } from '@/components/shared';
 
@@ -27,6 +28,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <DealershipsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/booking"
+            element={
+              <ProtectedRoute>
+                <BookingPage />
               </ProtectedRoute>
             }
           />

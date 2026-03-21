@@ -6,6 +6,7 @@ import { errorHandler } from './middleware/errorHandler';
 import authRoutes from './modules/auth/auth.routes';
 import usersRoutes from './modules/users/users.routes';
 import dealershipsRoutes from './modules/dealerships/dealerships.routes';
+import appointmentsRoutes from './modules/appointments/appointments.routes';
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/dealerships', dealershipsRoutes);
+app.use('/api/appointments', appointmentsRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);

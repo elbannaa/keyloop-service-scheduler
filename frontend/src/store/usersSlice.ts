@@ -6,7 +6,6 @@ export interface UserData {
   id: string;
   email: string;
   name: string;
-  phone: string | null;
   role: string;
   isActive: boolean;
   createdAt: string;
@@ -45,9 +44,9 @@ export const fetchUsers = createAsyncThunk(
 
 export const createUser = createAsyncThunk(
   'users/create',
-  async (data: { name: string; email: string; role: string; password?: string; phone?: string }, { rejectWithValue, dispatch }) => {
+  async (data: { name: string; email: string; role: string; password?: string }, { rejectWithValue, dispatch }) => {
     try {
-      // Backend expects: email, password, name, phone, role
+      // Backend expects: email, password, name, role
       const payload = { ...data, password: data.password || 'Temporary123!' };
       await api.post(API_ROUTES.USERS, payload);
       dispatch(fetchUsers());
@@ -71,6 +70,23 @@ export const toggleUserStatus = createAsyncThunk(
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || Messages.UPDATE_STATUS_ERROR
+      );
+    }
+  }
+);
+
+export const updateUser = createAsyncThunk(
+  'users/update',
+  async (
+    { id, data }: { id: string; data: { name?: string; role?: string } },
+    { rejectWithValue, dispatch }
+  ) => {
+    try {
+      await api.patch(`${API_ROUTES.USERS}/${id}`, data);
+      dispatch(fetchUsers());
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || Messages.UPDATE_ERROR
       );
     }
   }

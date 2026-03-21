@@ -70,19 +70,19 @@ export const ManageResourcesDialog: React.FC<ManageResourcesDialogProps> = ({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[700px] h-[600px] flex flex-col p-0 overflow-hidden">
           <DialogHeader className="p-6 pb-0">
-            <DialogTitle className="flex items-center gap-2 text-2xl font-bold">
-              <Info className="h-5 w-5 text-primary" />
+            <DialogTitle className="flex items-center gap-2 text-xl font-bold">
+              <Info className="h-4 w-4 text-primary" />
               Manage {dealershipName}
             </DialogTitle>
           </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col mt-4">
             <div className="px-6 border-b border-border">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="technicians" className="flex items-center gap-2">
+              <TabsList className="grid h-8 w-full grid-cols-2">
+                <TabsTrigger value="technicians" className="flex items-center gap-2 text-xs">
                   Technicians ({technicians.length})
                 </TabsTrigger>
-                <TabsTrigger value="vehicles" className="flex items-center gap-2">
+                <TabsTrigger value="vehicles" className="flex items-center gap-2 text-xs">
                   Service Vehicles ({vehicles.length})
                 </TabsTrigger>
               </TabsList>
@@ -91,11 +91,11 @@ export const ManageResourcesDialog: React.FC<ManageResourcesDialogProps> = ({
             <div className="flex-1 overflow-auto p-6 pt-4">
               <TabsContent value="technicians" className="m-0 space-y-4">
                 <div className="flex justify-between items-center">
-                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                  <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                     Staff Roster
                   </h3>
-                  <Button size="sm" onClick={() => setIsAddTechOpen(true)} className="gap-2">
-                    <UserPlus className="h-4 w-4" /> Add Technician
+                  <Button size="sm" onClick={() => setIsAddTechOpen(true)} className="gap-2 text-xs h-8">
+                    <UserPlus className="h-3 w-3" /> Add Technician
                   </Button>
                 </div>
 
@@ -103,10 +103,9 @@ export const ManageResourcesDialog: React.FC<ManageResourcesDialogProps> = ({
                   <Table>
                     <TableHeader className="bg-muted/50">
                       <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Contact</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Action</TableHead>
+                        <TableHead className="text-xs font-semibold tracking-wider">Name</TableHead>
+                        <TableHead className="text-xs font-semibold tracking-wider">Status</TableHead>
+                        <TableHead className="text-right text-xs font-semibold tracking-wider">Action</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -125,15 +124,14 @@ export const ManageResourcesDialog: React.FC<ManageResourcesDialogProps> = ({
                       ) : (
                         technicians.map((t) => (
                           <TableRow key={t.id}>
-                            <TableCell className="font-medium">{t.name}</TableCell>
-                            <TableCell className="text-muted-foreground text-sm">{t.phone || '-'}</TableCell>
+                            <TableCell className="font-medium text-xs">{t.name}</TableCell>
                             <TableCell>
-                              <Badge variant={t.isActive ? "default" : "secondary"} className="text-[10px] uppercase">
+                              <Badge variant={t.isActive ? "default" : "secondary"} className="text-[10px] uppercase rounded-full">
                                 {t.isActive ? "Active" : "Away"}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-right">
-                              <Button variant="ghost" size="icon" onClick={() => handleRemoveTech(t.id)} className="text-destructive hover:text-white hover:bg-destructive">
+                              <Button variant="ghost" size="icon" onClick={() => handleRemoveTech(t.id)} className="h-8 w-8 text-destructive hover:text-white hover:bg-destructive">
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </TableCell>
@@ -147,11 +145,11 @@ export const ManageResourcesDialog: React.FC<ManageResourcesDialogProps> = ({
 
               <TabsContent value="vehicles" className="m-0 space-y-4">
                 <div className="flex justify-between items-center">
-                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                  <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                     Fleet Management
                   </h3>
-                  <Button size="sm" onClick={() => setIsAddVehOpen(true)} className="gap-2">
-                    <Car className="h-4 w-4" /> Add Vehicle
+                  <Button size="sm" onClick={() => setIsAddVehOpen(true)} className="gap-2 text-xs h-8">
+                    <Car className="h-3 w-3" /> Add Vehicle
                   </Button>
                 </div>
 
@@ -159,9 +157,9 @@ export const ManageResourcesDialog: React.FC<ManageResourcesDialogProps> = ({
                   <Table>
                     <TableHeader className="bg-muted/50">
                       <TableRow>
-                        <TableHead>Make / Model</TableHead>
-                        <TableHead>Year</TableHead>
-                        <TableHead className="text-right">Action</TableHead>
+                        <TableHead className="text-xs font-semibold tracking-wider">Make / Model</TableHead>
+                        <TableHead className="text-xs font-semibold tracking-wider">Year</TableHead>
+                        <TableHead className="text-right text-xs font-semibold tracking-wider">Action</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -180,10 +178,10 @@ export const ManageResourcesDialog: React.FC<ManageResourcesDialogProps> = ({
                       ) : (
                         vehicles.map((v) => (
                           <TableRow key={v.id}>
-                            <TableCell className="font-medium">{v.make} {v.model}</TableCell>
-                            <TableCell className="text-muted-foreground text-sm">{v.year}</TableCell>
+                            <TableCell className="font-medium text-xs">{v.make} {v.model}</TableCell>
+                            <TableCell className="text-muted-foreground text-[10px]">{v.year}</TableCell>
                             <TableCell className="text-right">
-                              <Button variant="ghost" size="icon" onClick={() => handleRemoveVeh(v.id)} className="text-destructive hover:text-white hover:bg-destructive">
+                              <Button variant="ghost" size="icon" onClick={() => handleRemoveVeh(v.id)} className="h-8 w-8 text-destructive hover:text-white hover:bg-destructive">
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </TableCell>

@@ -8,7 +8,6 @@ interface RegisterInput {
   email: string;
   password: string;
   name: string;
-  phone?: string;
 }
 
 interface LoginInput {
@@ -18,7 +17,7 @@ interface LoginInput {
 
 export class AuthService {
   async register(input: RegisterInput) {
-    const { email, password, name, phone } = input;
+    const { email, password, name } = input;
 
     // Check for duplicate email
     const existingUser = await prisma.user.findUnique({
@@ -38,7 +37,6 @@ export class AuthService {
         email,
         password: hashedPassword,
         name,
-        phone,
       },
     });
 

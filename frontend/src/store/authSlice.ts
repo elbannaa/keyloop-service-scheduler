@@ -6,7 +6,6 @@ interface User {
   id: string;
   email: string;
   name: string;
-  phone: string | null;
   role: RoleType;
   createdAt: string;
   updatedAt: string;
@@ -30,7 +29,7 @@ const initialState: AuthState = {
 export const registerUser = createAsyncThunk(
   'auth/register',
   async (
-    data: { email: string; password: string; name: string; phone?: string },
+    data: { email: string; password: string; name: string },
     { rejectWithValue }
   ) => {
     try {

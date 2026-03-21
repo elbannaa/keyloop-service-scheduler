@@ -10,7 +10,7 @@ const usersService = new UsersService();
 export class UsersController {
   async createUser(req: AuthRequest, res: Response): Promise<void> {
     try {
-      const { email, password, name, phone, role } = req.body;
+      const { email, password, name, role } = req.body;
 
       if (!email || !name || !role) {
         const response: ApiResponse<null> = {
@@ -45,7 +45,7 @@ export class UsersController {
         return;
       }
 
-      const user = await usersService.createUser({ email, password, name, phone, role });
+      const user = await usersService.createUser({ email, password, name, role });
       const responseAPI: ApiResponse<{ user: typeof user }> = {
         success: true,
         code: 201,
@@ -120,21 +120,32 @@ export class UsersController {
 
   async updateUser(req: AuthRequest, res: Response): Promise<void> {
     try {
-      const { name, phone } = req.body;
+      const { name, role } = req.body;
       const id = req.params['id'] as string;
 
-      if (name === undefined && phone === undefined) {
+      if (name === undefined && role === undefined) {
         const response: ApiResponse<null> = {
           success: false,
           code: 400,
           message: Messages.VALIDATION_ERROR,
-          errors: { detail: 'At least one of name or phone is required', code: ErrorCode.VALIDATION_ERROR }
+          errors: { detail: 'name or role is required', code: ErrorCode.VALIDATION_ERROR }
         };
         res.status(400).json(response);
         return;
       }
 
-      const user = await usersService.updateUser(id, { name, phone });
+      if (role && !Object.values(Role).includes(role)) {
+        const response: ApiResponse<null> = {
+          success: false,
+          code: 400,
+          message: Messages.VALIDATION_ERROR,
+          errors: { detail: `role must be one of: ${Object.values(Role).join(', ')}`, code: ErrorCode.VALIDATION_ERROR }
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      const user = await usersService.updateUser(id, { name, role });
       const responseAPI: ApiResponse<{ user: typeof user }> = {
         success: true,
         code: 200,

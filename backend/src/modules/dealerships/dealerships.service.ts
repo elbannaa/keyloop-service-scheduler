@@ -1,16 +1,15 @@
 import prisma from '../../lib/prisma';
 import { AppError } from '../auth/auth.service';
+import { Role } from '../../constants/role';
 
 interface CreateDealershipInput {
   name: string;
   address: string;
-  phone?: string;
 }
 
 interface UpdateDealershipInput {
   name?: string;
   address?: string;
-  phone?: string;
 }
 
 interface ListDealershipsFilters {
@@ -19,11 +18,11 @@ interface ListDealershipsFilters {
   vehicleYear?: number;
   minTechnicians?: number;
   search?: string;
+  requesterRole?: string;
 }
 
 interface CreateTechnicianInput {
   name: string;
-  phone?: string;
 }
 
 interface CreateVehicleInput {
@@ -43,7 +42,7 @@ export class DealershipsService {
   }
 
   async listDealerships(filters: ListDealershipsFilters = {}) {
-    const { vehicleMake, vehicleModel, vehicleYear, minTechnicians, search } = filters;
+    const { vehicleMake, vehicleModel, vehicleYear, minTechnicians, search, requesterRole } = filters;
 
     // Build vehicle filter for the nested where
     const vehicleFilter =
@@ -65,10 +64,18 @@ export class DealershipsService {
       ...(vehicleFilter && { vehicles: vehicleFilter }),
     };
 
+    if (requesterRole === Role.USER) {
+      where.managerId = { not: null };
+      where.manager = { isActive: true };
+      where.isActive = true;
+    }
+
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
         { address: { contains: search, mode: 'insensitive' } },
+        { manager: { name: { contains: search, mode: 'insensitive' } } },
+        { manager: { email: { contains: search, mode: 'insensitive' } } },
       ];
     }
 
@@ -124,7 +131,6 @@ export class DealershipsService {
       data: {
         ...(input.name !== undefined && { name: input.name }),
         ...(input.address !== undefined && { address: input.address }),
-        ...(input.phone !== undefined && { phone: input.phone }),
       },
       include: { manager: { select: { id: true, name: true, email: true } } },
     });

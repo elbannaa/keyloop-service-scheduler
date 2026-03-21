@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 interface AddTechnicianDialogProps {
   dealershipId: string;
@@ -21,7 +22,7 @@ interface AddTechnicianDialogProps {
 export const AddTechnicianDialog: React.FC<AddTechnicianDialogProps> = ({ dealershipId, open, onOpenChange }) => {
   const dispatch = useAppDispatch();
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ name: '', phone: '' });
+  const [formData, setFormData] = useState({ name: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validate = () => {
@@ -39,7 +40,7 @@ export const AddTechnicianDialog: React.FC<AddTechnicianDialogProps> = ({ dealer
     try {
       await dispatch(addTechnician({ id: dealershipId, data: formData })).unwrap();
       onOpenChange(false);
-      setFormData({ name: '', phone: '' });
+      setFormData({ name: '' });
     } catch (err: any) {
       setErrors({ submit: err || 'Failed to add technician' });
     } finally {
@@ -53,38 +54,29 @@ export const AddTechnicianDialog: React.FC<AddTechnicianDialogProps> = ({ dealer
         <DialogHeader>
           <DialogTitle>Add Technician</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="tech-name">Full Name</Label>
+            <Label htmlFor="tech-name" className="text-xs font-semibold">Full Name</Label>
             <Input
               id="tech-name"
               placeholder="Alice Smith"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className={errors.name ? 'border-destructive' : ''}
+              className={cn("text-xs h-8", errors.name ? 'border-destructive' : '')}
             />
-            {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
+            {errors.name && <p className="text-[10px] text-destructive">{errors.name}</p>}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="tech-phone">Contact Phone (Optional)</Label>
-            <Input
-              id="tech-phone"
-              placeholder="+44 ..."
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            />
-          </div>
 
           {errors.submit && (
-            <p className="text-sm text-destructive bg-destructive/10 p-2 rounded">{errors.submit}</p>
+            <p className="text-[10px] text-destructive bg-destructive/10 p-2 rounded">{errors.submit}</p>
           )}
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" className="text-xs h-8" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading} className="text-xs h-8">
               {loading ? 'Adding...' : 'Add Technician'}
             </Button>
           </DialogFooter>

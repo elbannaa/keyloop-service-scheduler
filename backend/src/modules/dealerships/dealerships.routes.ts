@@ -28,7 +28,7 @@ router.get(
   (req, res) => dealershipsController.getDealership(req, res)
 );
 
-// EDIT info (name/address/phone) — Admin or Manager (ownership enforced in service)
+// EDIT info (name/address) — Admin or Manager (ownership enforced in service)
 router.patch(
   '/:id',
   authGuard,

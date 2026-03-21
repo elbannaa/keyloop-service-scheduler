@@ -6,9 +6,13 @@ export interface DealershipData {
   id: string;
   name: string;
   address: string;
-  phone: string | null;
   isActive: boolean;
   managerId: string | null;
+  manager?: {
+    id: string;
+    name: string;
+    email: string;
+  };
   _count?: {
     technicians: number;
     vehicles: number;
@@ -18,7 +22,6 @@ export interface DealershipData {
 export interface TechnicianData {
   id: string;
   name: string;
-  phone: string | null;
   isActive: boolean;
   dealershipId: string;
 }
@@ -69,7 +72,7 @@ export const fetchDealerships = createAsyncThunk(
 
 export const createDealership = createAsyncThunk(
   'dealerships/create',
-  async (data: { name: string; address: string; phone?: string }, { rejectWithValue, dispatch }) => {
+  async (data: { name: string; address: string }, { rejectWithValue, dispatch }) => {
     try {
       await api.post(API_ROUTES.DEALERSHIPS, data);
       dispatch(fetchDealerships());
@@ -101,7 +104,7 @@ export const toggleDealershipStatus = createAsyncThunk(
 export const updateDealership = createAsyncThunk(
   'dealerships/update',
   async (
-    { id, data }: { id: string; data: { name: string; address: string; phone: string } },
+    { id, data }: { id: string; data: { name: string; address: string } },
     { rejectWithValue, dispatch }
   ) => {
     try {
@@ -110,6 +113,23 @@ export const updateDealership = createAsyncThunk(
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || Messages.UPDATE_ERROR
+      );
+    }
+  }
+);
+
+export const assignManager = createAsyncThunk(
+  'dealerships/assignManager',
+  async (
+    { id, managerId }: { id: string; managerId: string },
+    { rejectWithValue, dispatch }
+  ) => {
+    try {
+      await api.patch(`${API_ROUTES.DEALERSHIPS}/${id}/manager`, { managerId });
+      dispatch(fetchDealerships());
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to assign manager'
       );
     }
   }
@@ -129,7 +149,7 @@ export const fetchTechnicians = createAsyncThunk(
 
 export const addTechnician = createAsyncThunk(
   'dealerships/addTechnician',
-  async ({ id, data }: { id: string; data: { name: string; phone?: string } }, { rejectWithValue, dispatch }) => {
+  async ({ id, data }: { id: string; data: { name: string } }, { rejectWithValue, dispatch }) => {
     try {
       await api.post(`${API_ROUTES.DEALERSHIPS}/${id}/technicians`, data);
       dispatch(fetchTechnicians(id));
