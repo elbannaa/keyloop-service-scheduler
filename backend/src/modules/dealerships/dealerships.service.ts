@@ -236,4 +236,42 @@ export class DealershipsService {
 
     return vehicles;
   }
+
+  async deleteTechnician(dealershipId: string, technicianId: string, requesterId: string, requesterRole: string) {
+    const dealership = await prisma.dealership.findUnique({ where: { id: dealershipId } });
+    if (!dealership) {
+      throw new AppError(404, 'Dealership not found');
+    }
+
+    if (requesterRole === 'MANAGER' && dealership.managerId !== requesterId) {
+      throw new AppError(403, 'You can only delete technicians from your own dealership');
+    }
+
+    const technician = await prisma.technician.findUnique({ where: { id: technicianId } });
+    if (!technician || technician.dealershipId !== dealershipId) {
+      throw new AppError(404, 'Technician not found in this dealership');
+    }
+
+    await prisma.technician.delete({ where: { id: technicianId } });
+    return { id: technicianId };
+  }
+
+  async deleteVehicle(dealershipId: string, vehicleId: string, requesterId: string, requesterRole: string) {
+    const dealership = await prisma.dealership.findUnique({ where: { id: dealershipId } });
+    if (!dealership) {
+      throw new AppError(404, 'Dealership not found');
+    }
+
+    if (requesterRole === 'MANAGER' && dealership.managerId !== requesterId) {
+      throw new AppError(403, 'You can only delete vehicles from your own dealership');
+    }
+
+    const vehicle = await prisma.vehicle.findUnique({ where: { id: vehicleId } });
+    if (!vehicle || vehicle.dealershipId !== dealershipId) {
+      throw new AppError(404, 'Vehicle not found in this dealership');
+    }
+
+    await prisma.vehicle.delete({ where: { id: vehicleId } });
+    return { id: vehicleId };
+  }
 }

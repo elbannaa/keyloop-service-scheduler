@@ -4,6 +4,7 @@ import { logoutUser } from '@/store/authSlice';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, LogOut, Users, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Role } from '@/constants/role';
 
 const HomePage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -89,9 +90,9 @@ const HomePage: React.FC = () => {
               View Schedule
             </Button>
           </div>
-          
+
           <div className="pt-12 grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            <div 
+            <div
               onClick={() => navigate('/dealerships')}
               className="bg-card hover:bg-muted/50 transition-colors border border-border p-6 rounded-2xl flex flex-col items-center justify-center text-center cursor-pointer shadow-sm hover:shadow-md group"
             >
@@ -101,9 +102,9 @@ const HomePage: React.FC = () => {
               <h3 className="text-xl font-bold text-foreground">Dealerships</h3>
               <p className="text-muted-foreground mt-2">View and manage service dealerships.</p>
             </div>
-            
-            {user?.role === 'ADMIN' && (
-              <div 
+
+            {user?.role === Role.ADMIN && (
+              <div
                 onClick={() => navigate('/users')}
                 className="bg-card hover:bg-muted/50 transition-colors border border-border p-6 rounded-2xl flex flex-col items-center justify-center text-center cursor-pointer shadow-sm hover:shadow-md group"
               >

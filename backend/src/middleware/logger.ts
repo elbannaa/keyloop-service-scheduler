@@ -9,4 +9,4 @@ export const logger = pino({
       : undefined,
 });
 
-export const requestLogger = expressPinoLogger({ logger });
+export const requestLogger = expressPinoLogger({ logger: logger as any });

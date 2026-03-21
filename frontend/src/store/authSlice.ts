@@ -1,12 +1,13 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '@/lib/axios';
+import { type RoleType } from '@/constants/role';
 
 interface User {
   id: string;
   email: string;
   name: string;
   phone: string | null;
-  role: 'USER' | 'MANAGER' | 'ADMIN';
+  role: RoleType;
   createdAt: string;
   updatedAt: string;
 }

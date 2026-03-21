@@ -23,8 +23,11 @@ import {
   Edit,
   Check,
   X,
+  Settings2,
+  ToggleLeft,
 } from 'lucide-react';
 import { CreateDealershipDialog } from '@/components/forms/CreateDealershipDialog';
+import { ManageResourcesDialog } from '@/components/forms/ManageResourcesDialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,6 +36,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import debounce from 'lodash.debounce';
 import { cn } from "@/lib/utils";
+import { Role } from '@/constants/role';
 
 const DealershipsPage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -41,10 +45,11 @@ const DealershipsPage: React.FC = () => {
 
   const [search, setSearch] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [manageResource, setManageResource] = useState<{ id: string, name: string } | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ name: '', address: '', phone: '' });
 
-  const canManage = user?.role === 'ADMIN' || user?.role === 'MANAGER';
+  const canManage = user?.role === Role.ADMIN || user?.role === 'MANAGER';
 
   const debouncedFetch = useCallback(
     debounce((query: { search?: string }) => {
@@ -69,17 +74,8 @@ const DealershipsPage: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full bg-background/50">
-      <div className="border-b border-border bg-card px-4 py-8 md:px-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 max-w-7xl mx-auto w-full">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-extrabold tracking-tight">Dealerships</h1>
-            <p className="text-muted-foreground">Browse and manage keyloop service centers.</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex-1 p-4 md:p-8 overflow-auto">
-        <div className="max-w-7xl mx-auto w-full space-y-6">
+      <div className="flex-1 overflow-auto">
+        <div className="mx-auto w-full space-y-6">
           {/* Search Bar */}
           <div className="flex items-center gap-2 justify-between">
             <div className="relative w-full">
@@ -103,7 +99,7 @@ const DealershipsPage: React.FC = () => {
               <Button variant="outline" size="icon" onClick={() => dispatch(fetchDealerships({ search }))} disabled={loading}>
                 <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
               </Button>
-              {user?.role === 'ADMIN' && (
+              {user?.role === Role.ADMIN && (
                 <Button onClick={() => setIsCreateOpen(true)} className="flex items-center gap-2">
                   <Plus className="h-4 w-4" />
                   <span>Add Dealership</span>
@@ -113,7 +109,7 @@ const DealershipsPage: React.FC = () => {
           </div>
 
           {/* Table Container */}
-          <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+          <div className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
             <Table>
               <TableHeader className="bg-muted/50">
                 <TableRow>
@@ -143,8 +139,7 @@ const DealershipsPage: React.FC = () => {
                         />
                       ) : (
                         <div className="flex items-center gap-3">
-                          <Building2 className="h-5 w-5 text-primary" />
-                          <span className="font-bold text-foreground">{d.name}</span>
+                          <span className="text-foreground">{d.name}</span>
                         </div>
                       )}
                     </TableCell>
@@ -212,8 +207,11 @@ const DealershipsPage: React.FC = () => {
                               <DropdownMenuItem onClick={() => handleStartEdit(d)} className="flex items-center gap-2">
                                 <Edit className="h-4 w-4" /> Edit Details
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => dispatch(toggleDealershipStatus({ id: d.id, currentStatus: d.isActive }))}>
-                                {d.isActive ? 'Deactivate Dealership' : 'Activate Dealership'}
+                              <DropdownMenuItem onClick={() => setManageResource({ id: d.id, name: d.name })} className="flex items-center gap-2">
+                                <Settings2 className="h-4 w-4" /> Manage Resources
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => dispatch(toggleDealershipStatus({ id: d.id, currentStatus: d.isActive }))} className="flex items-center gap-2">
+                                <ToggleLeft className="h-4 w-4" /> {d.isActive ? 'Deactivate' : 'Activate'}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -229,6 +227,15 @@ const DealershipsPage: React.FC = () => {
       </div>
 
       <CreateDealershipDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
+
+      {manageResource && (
+        <ManageResourcesDialog
+          open={!!manageResource}
+          onOpenChange={(open) => !open && setManageResource(null)}
+          dealershipId={manageResource.id}
+          dealershipName={manageResource.name}
+        />
+      )}
     </div>
   );
 };

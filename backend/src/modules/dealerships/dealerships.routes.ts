@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { DealershipsController } from './dealerships.controller';
 import { authGuard, requireRole } from '../../middleware/auth';
+import { Role } from '@/constants/role';
 
 const router = Router();
 const dealershipsController = new DealershipsController();
@@ -9,7 +10,7 @@ const dealershipsController = new DealershipsController();
 router.post(
   '/',
   authGuard,
-  requireRole('ADMIN'),
+  requireRole(Role.ADMIN),
   (req, res) => dealershipsController.createDealership(req, res)
 );
 
@@ -31,7 +32,7 @@ router.get(
 router.patch(
   '/:id',
   authGuard,
-  requireRole('ADMIN', 'MANAGER'),
+  requireRole(Role.ADMIN, 'MANAGER'),
   (req, res) => dealershipsController.updateDealership(req, res)
 );
 
@@ -39,7 +40,7 @@ router.patch(
 router.patch(
   '/:id/manager',
   authGuard,
-  requireRole('ADMIN'),
+  requireRole(Role.ADMIN),
   (req, res) => dealershipsController.assignManager(req, res)
 );
 
@@ -47,7 +48,7 @@ router.patch(
 router.patch(
   '/:id/status',
   authGuard,
-  requireRole('ADMIN', 'MANAGER'),
+  requireRole(Role.ADMIN, 'MANAGER'),
   (req, res) => dealershipsController.setDealershipActive(req, res)
 );
 
@@ -56,7 +57,7 @@ router.patch(
 router.post(
   '/:id/technicians',
   authGuard,
-  requireRole('ADMIN', 'MANAGER'),
+  requireRole(Role.ADMIN, 'MANAGER'),
   (req, res) => dealershipsController.createTechnician(req, res)
 );
 
@@ -66,12 +67,19 @@ router.get(
   (req, res) => dealershipsController.listTechnicians(req, res)
 );
 
+router.delete(
+  '/:id/technicians/:technicianId',
+  authGuard,
+  requireRole(Role.ADMIN, 'MANAGER'),
+  (req, res) => dealershipsController.deleteTechnician(req, res)
+);
+
 // ─── Vehicles sub-resource ────────────────────────────────────────────
 
 router.post(
   '/:id/vehicles',
   authGuard,
-  requireRole('ADMIN', 'MANAGER'),
+  requireRole(Role.ADMIN, 'MANAGER'),
   (req, res) => dealershipsController.createVehicle(req, res)
 );
 
@@ -79,6 +87,13 @@ router.get(
   '/:id/vehicles',
   authGuard,
   (req, res) => dealershipsController.listVehicles(req, res)
+);
+
+router.delete(
+  '/:id/vehicles/:vehicleId',
+  authGuard,
+  requireRole(Role.ADMIN, 'MANAGER'),
+  (req, res) => dealershipsController.deleteVehicle(req, res)
 );
 
 export default router;

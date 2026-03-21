@@ -374,4 +374,68 @@ export class DealershipsController {
       throw error;
     }
   }
+
+  async deleteTechnician(req: AuthRequest, res: Response): Promise<void> {
+    const dealershipId = req.params['id'] as string;
+    const technicianId = req.params['technicianId'] as string;
+    try {
+      const result = await dealershipsService.deleteTechnician(
+        dealershipId,
+        technicianId,
+        req.user!.id,
+        req.user!.role
+      );
+      const responseAPI: ApiResponse<typeof result> = {
+        success: true,
+        code: 200,
+        message: 'Technician deleted successfully',
+        data: result
+      };
+      res.status(200).json(responseAPI);
+    } catch (error) {
+      if (error instanceof AppError) {
+        const response: ApiResponse<null> = {
+          success: false,
+          code: error.statusCode,
+          message: error.message,
+          errors: { code: ErrorCode.UNKNOWN }
+        };
+        res.status(error.statusCode).json(response);
+        return;
+      }
+      throw error;
+    }
+  }
+
+  async deleteVehicle(req: AuthRequest, res: Response): Promise<void> {
+    const dealershipId = req.params['id'] as string;
+    const vehicleId = req.params['vehicleId'] as string;
+    try {
+      const result = await dealershipsService.deleteVehicle(
+        dealershipId,
+        vehicleId,
+        req.user!.id,
+        req.user!.role
+      );
+      const responseAPI: ApiResponse<typeof result> = {
+        success: true,
+        code: 200,
+        message: 'Vehicle deleted successfully',
+        data: result
+      };
+      res.status(200).json(responseAPI);
+    } catch (error) {
+      if (error instanceof AppError) {
+        const response: ApiResponse<null> = {
+          success: false,
+          code: error.statusCode,
+          message: error.message,
+          errors: { code: ErrorCode.UNKNOWN }
+        };
+        res.status(error.statusCode).json(response);
+        return;
+      }
+      throw error;
+    }
+  }
 }

@@ -15,15 +15,37 @@ export interface DealershipData {
   };
 }
 
+export interface TechnicianData {
+  id: string;
+  name: string;
+  phone: string | null;
+  isActive: boolean;
+  dealershipId: string;
+}
+
+export interface VehicleData {
+  id: string;
+  make: string;
+  model: string;
+  year: number;
+  dealershipId: string;
+}
+
 interface DealershipsState {
   data: DealershipData[];
+  technicians: TechnicianData[];
+  vehicles: VehicleData[];
   loading: boolean;
+  subResourceLoading: boolean;
   error: string | null;
 }
 
 const initialState: DealershipsState = {
   data: [],
+  technicians: [],
+  vehicles: [],
   loading: false,
+  subResourceLoading: false,
   error: null,
 };
 
@@ -93,6 +115,82 @@ export const updateDealership = createAsyncThunk(
   }
 );
 
+export const fetchTechnicians = createAsyncThunk(
+  'dealerships/fetchTechnicians',
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`${API_ROUTES.DEALERSHIPS}/${id}/technicians`);
+      return response.data?.data?.technicians || [];
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch technicians');
+    }
+  }
+);
+
+export const addTechnician = createAsyncThunk(
+  'dealerships/addTechnician',
+  async ({ id, data }: { id: string; data: { name: string; phone?: string } }, { rejectWithValue, dispatch }) => {
+    try {
+      await api.post(`${API_ROUTES.DEALERSHIPS}/${id}/technicians`, data);
+      dispatch(fetchTechnicians(id));
+      dispatch(fetchDealerships());
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to add technician');
+    }
+  }
+);
+
+export const removeTechnician = createAsyncThunk(
+  'dealerships/removeTechnician',
+  async ({ id, technicianId }: { id: string; technicianId: string }, { rejectWithValue, dispatch }) => {
+    try {
+      await api.delete(`${API_ROUTES.DEALERSHIPS}/${id}/technicians/${technicianId}`);
+      dispatch(fetchTechnicians(id));
+      dispatch(fetchDealerships());
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to remove technician');
+    }
+  }
+);
+
+export const fetchVehicles = createAsyncThunk(
+  'dealerships/fetchVehicles',
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`${API_ROUTES.DEALERSHIPS}/${id}/vehicles`);
+      return response.data?.data?.vehicles || [];
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch vehicles');
+    }
+  }
+);
+
+export const addVehicle = createAsyncThunk(
+  'dealerships/addVehicle',
+  async ({ id, data }: { id: string; data: { make: string; model: string; year: number } }, { rejectWithValue, dispatch }) => {
+    try {
+      await api.post(`${API_ROUTES.DEALERSHIPS}/${id}/vehicles`, data);
+      dispatch(fetchVehicles(id));
+      dispatch(fetchDealerships());
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to add vehicle');
+    }
+  }
+);
+
+export const removeVehicle = createAsyncThunk(
+  'dealerships/removeVehicle',
+  async ({ id, vehicleId }: { id: string; vehicleId: string }, { rejectWithValue, dispatch }) => {
+    try {
+      await api.delete(`${API_ROUTES.DEALERSHIPS}/${id}/vehicles/${vehicleId}`);
+      dispatch(fetchVehicles(id));
+      dispatch(fetchDealerships());
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to remove vehicle');
+    }
+  }
+);
+
 const dealershipsSlice = createSlice({
   name: 'dealerships',
   initialState,
@@ -110,6 +208,26 @@ const dealershipsSlice = createSlice({
       .addCase(fetchDealerships.rejected, (state, action) => {
         state.loading = false;
         state.error = (action.payload as string) || Messages.GENERIC_ERROR;
+      })
+      .addCase(fetchTechnicians.pending, (state) => {
+        state.subResourceLoading = true;
+      })
+      .addCase(fetchTechnicians.fulfilled, (state, action) => {
+        state.subResourceLoading = false;
+        state.technicians = action.payload;
+      })
+      .addCase(fetchTechnicians.rejected, (state) => {
+        state.subResourceLoading = false;
+      })
+      .addCase(fetchVehicles.pending, (state) => {
+        state.subResourceLoading = true;
+      })
+      .addCase(fetchVehicles.fulfilled, (state, action) => {
+        state.subResourceLoading = false;
+        state.vehicles = action.payload;
+      })
+      .addCase(fetchVehicles.rejected, (state) => {
+        state.subResourceLoading = false;
       });
   },
 });
