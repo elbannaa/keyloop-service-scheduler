@@ -6,7 +6,7 @@ interface User {
   email: string;
   name: string;
   phone: string | null;
-  role: 'USER' | 'ADMIN';
+  role: 'USER' | 'MANAGER' | 'ADMIN';
   createdAt: string;
   updatedAt: string;
 }
@@ -34,8 +34,8 @@ export const registerUser = createAsyncThunk(
   ) => {
     try {
       const response = await api.post('/auth/register', data);
-      localStorage.setItem('token', response.data.token);
-      return response.data;
+      localStorage.setItem('token', response.data.data.token);
+      return response.data.data;
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || 'Registration failed'
@@ -52,8 +52,8 @@ export const loginUser = createAsyncThunk(
   ) => {
     try {
       const response = await api.post('/auth/login', data);
-      localStorage.setItem('token', response.data.token);
-      return response.data;
+      localStorage.setItem('token', response.data.data.token);
+      return response.data.data;
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || 'Login failed'
@@ -82,7 +82,7 @@ export const fetchCurrentUser = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await api.get('/auth/me');
-      return response.data;
+      return response.data.data;
     } catch (error: any) {
       localStorage.removeItem('token');
       return rejectWithValue(

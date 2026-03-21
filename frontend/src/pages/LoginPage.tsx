@@ -25,7 +25,7 @@ const LoginPage: React.FC = () => {
 
   useEffect(() => {
     if (token) {
-      navigate('/', { replace: true });
+      navigate('/dealerships', { replace: true });
     }
   }, [token, navigate]);
 

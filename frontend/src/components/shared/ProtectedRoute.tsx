@@ -3,6 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { fetchCurrentUser } from '@/store/authSlice';
 import { Loader2 } from 'lucide-react';
+import { AppLayout } from '@/components/layout';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -34,7 +35,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
 
-  return <>{children}</>;
+  return <AppLayout>{children}</AppLayout>;
 };
 
 export default ProtectedRoute;

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { AuthService, AppError } from './auth.service';
 import { AuthRequest } from '../../middleware/auth';
+import { ApiResponse, ErrorCode, Messages } from '../../constants/response';
 
 const authService = new AuthService();
 
@@ -11,29 +12,45 @@ export class AuthController {
 
       // Validation
       if (!email || !password || !name) {
-        res.status(400).json({
-          error: 'Validation Error',
-          message: 'Email, password, and name are required',
-        });
+        const response: ApiResponse<null> = {
+          success: false,
+          code: 400,
+          message: Messages.VALIDATION_ERROR,
+          errors: { detail: 'Email, password, and name are required', code: ErrorCode.VALIDATION_ERROR }
+        };
+        res.status(400).json(response);
         return;
       }
 
       if (password.length < 6) {
-        res.status(400).json({
-          error: 'Validation Error',
-          message: 'Password must be at least 6 characters',
-        });
+        const response: ApiResponse<null> = {
+          success: false,
+          code: 400,
+          message: Messages.VALIDATION_ERROR,
+          errors: { detail: 'Password must be at least 6 characters', code: ErrorCode.VALIDATION_ERROR }
+        };
+        res.status(400).json(response);
         return;
       }
 
       const result = await authService.register({ email, password, name, phone });
-      res.status(201).json(result);
+      
+      const response: ApiResponse<typeof result> = {
+        success: true,
+        code: 201,
+        message: Messages.SUCCESS,
+        data: result
+      };
+      res.status(201).json(response);
     } catch (error) {
       if (error instanceof AppError) {
-        res.status(error.statusCode).json({
-          error: 'Registration Error',
+        const response: ApiResponse<null> = {
+          success: false,
+          code: error.statusCode,
           message: error.message,
-        });
+          errors: { code: ErrorCode.UNKNOWN }
+        };
+        res.status(error.statusCode).json(response);
         return;
       }
       throw error;
@@ -45,21 +62,34 @@ export class AuthController {
       const { email, password } = req.body;
 
       if (!email || !password) {
-        res.status(400).json({
-          error: 'Validation Error',
-          message: 'Email and password are required',
-        });
+        const response: ApiResponse<null> = {
+          success: false,
+          code: 400,
+          message: Messages.VALIDATION_ERROR,
+          errors: { detail: 'Email and password are required', code: ErrorCode.VALIDATION_ERROR }
+        };
+        res.status(400).json(response);
         return;
       }
 
       const result = await authService.login({ email, password });
-      res.status(200).json(result);
+      
+      const response: ApiResponse<typeof result> = {
+        success: true,
+        code: 200,
+        message: Messages.SUCCESS,
+        data: result
+      };
+      res.status(200).json(response);
     } catch (error) {
       if (error instanceof AppError) {
-        res.status(error.statusCode).json({
-          error: 'Authentication Error',
+        const response: ApiResponse<null> = {
+          success: false,
+          code: error.statusCode,
           message: error.message,
-        });
+          errors: { code: ErrorCode.UNKNOWN }
+        };
+        res.status(error.statusCode).json(response);
         return;
       }
       throw error;
@@ -71,15 +101,25 @@ export class AuthController {
       const token = req.headers.authorization?.split(' ')[1];
 
       if (!token) {
-        res.status(400).json({
-          error: 'Logout Error',
-          message: 'No token provided',
-        });
+        const response: ApiResponse<null> = {
+          success: false,
+          code: 400,
+          message: Messages.VALIDATION_ERROR,
+          errors: { detail: 'No token provided', code: ErrorCode.VALIDATION_ERROR }
+        };
+        res.status(400).json(response);
         return;
       }
 
       const result = await authService.logout(token);
-      res.status(200).json(result);
+      
+      const response: ApiResponse<typeof result> = {
+        success: true,
+        code: 200,
+        message: Messages.SUCCESS,
+        data: result
+      };
+      res.status(200).json(response);
     } catch (error) {
       throw error;
     }
@@ -88,21 +128,34 @@ export class AuthController {
   async getMe(req: AuthRequest, res: Response): Promise<void> {
     try {
       if (!req.user) {
-        res.status(401).json({
-          error: 'Unauthorized',
-          message: 'User not authenticated',
-        });
+        const response: ApiResponse<null> = {
+          success: false,
+          code: 401,
+          message: Messages.UNAUTHORIZED,
+          errors: { detail: 'User not authenticated', code: ErrorCode.UNAUTHORIZED }
+        };
+        res.status(401).json(response);
         return;
       }
 
       const user = await authService.getMe(req.user.id);
-      res.status(200).json({ user });
+      
+      const response: ApiResponse<{ user: typeof user }> = {
+        success: true,
+        code: 200,
+        message: Messages.SUCCESS,
+        data: { user }
+      };
+      res.status(200).json(response);
     } catch (error) {
       if (error instanceof AppError) {
-        res.status(error.statusCode).json({
-          error: 'Error',
+        const response: ApiResponse<null> = {
+          success: false,
+          code: error.statusCode,
           message: error.message,
-        });
+          errors: { code: ErrorCode.UNKNOWN }
+        };
+        res.status(error.statusCode).json(response);
         return;
       }
       throw error;

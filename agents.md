@@ -92,7 +92,7 @@ npm run dev
 
 - Frontend: http://localhost:5173
 - Backend API: http://localhost:3001
-- Admin credentials: `admin@scheduler.com` / `admin123`
+- Admin credentials: `admin@gmail.com` / `admin123`
 
 ---
 
@@ -112,7 +112,7 @@ npm run dev
 
 | Layer      | Technology                                  |
 |------------|---------------------------------------------|
-| Frontend   | React 18, Vite, TypeScript, TailwindCSS v4, ShadCN UI  |
+| Frontend   | React 18, Vite, TypeScript, TailwindCSS v4, ShadCn UI  |
 | State      | Redux Toolkit                               |
 | HTTP       | Axios (with interceptors)                   |
 | Routing    | React Router DOM v6                         |
@@ -125,6 +125,181 @@ npm run dev
 | Infra      | Docker Compose                              |
 
 ---
+
+## Backend Coding & Styling Rules
+
+### 1. Standard Response Structure
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "Request successful",
+  "data": {},
+  "errors": null
+}
+```
+
+#### Fields
+
+* **success**: Boolean indicating request result
+* **code**: HTTP status code or internal code
+* **message**: Human-readable message
+* **data**: Response payload
+* **errors**: Error details (if any)
+
+---
+
+### 2. Error Response Example
+
+```json
+{
+  "success": false,
+  "code": 400,
+  "message": "Validation failed",
+  "data": null,
+  "errors": {
+    "email": "Email is required"
+  }
+}
+```
+
+---
+
+### 3. Best Practices
+
+#### 3.1 Keep Response Consistent
+
+* Always return the same structure
+* Avoid changing field names between endpoints
+
+#### 3.2 Use HTTP Status Codes Properly
+
+* 200: Success
+* 201: Created
+* 400: Bad Request
+* 401: Unauthorized
+* 404: Not Found
+* 500: Server Error
+
+#### 3.3 Separate Concerns
+
+* `message`: for users
+* `errors`: for debugging/details
+
+---
+
+### 4. Centralized Enums & Constants
+
+#### 4.1 Error Codes (Single Source)
+
+Create a centralized enum file:
+
+```ts
+export enum ErrorCode {
+  UNKNOWN = "UNKNOWN",
+  VALIDATION_ERROR = "VALIDATION_ERROR",
+  UNAUTHORIZED = "UNAUTHORIZED",
+  NOT_FOUND = "NOT_FOUND",
+  INTERNAL_ERROR = "INTERNAL_ERROR"
+}
+```
+
+#### 4.2 General Messages (i18n Ready)
+
+Store messages in a separate file for scalability:
+
+```ts
+export const Messages = {
+  SUCCESS: "Request successful",
+  VALIDATION_ERROR: "Validation failed",
+  UNAUTHORIZED: "Unauthorized",
+  NOT_FOUND: "Resource not found",
+  INTERNAL_ERROR: "Something went wrong"
+};
+```
+
+➡ Future expansion:
+
+```
+/messages
+  ├── en.ts
+  ├── vi.ts
+  ├── jp.ts
+```
+
+---
+
+### 5. Role Enum (Authorization)
+
+Centralize role definitions:
+
+```ts
+export enum Role {
+  ADMIN = "ADMIN",
+  USER = "USER",
+  MODERATOR = "MODERATOR"
+}
+```
+
+---
+
+### 6. Recommended Response Wrapper (TypeScript)
+
+```ts
+export interface ApiResponse<T> {
+  success: boolean;
+  code: number;
+  message: string;
+  data?: T;
+  errors?: any;
+}
+```
+
+---
+
+### 7. Example Usage
+
+```ts
+return {
+  success: true,
+  code: 200,
+  message: Messages.SUCCESS,
+  data: user
+};
+```
+
+---
+
+### 8. Key Principles Summary
+
+* Keep response structure consistent
+* Centralize enums (error codes, roles)
+* Externalize messages for localization (i18n)
+* Avoid hardcoding strings in business logic
+* Make API predictable and scalable
+
+---
+
+### 9. Optional Enhancements
+
+* Add `timestamp`
+* Add `requestId` for tracing
+* Add `pagination` for list endpoints
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "Request successful",
+  "data": [],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 100
+  }
+}
+```
 
 ## Frontend Coding & Styling Rules
 
@@ -393,7 +568,7 @@ className="truncate md:whitespace-normal"
 - Minimum touch target: 44px
 
 ```tsx
-className="h-11 px-4"
+className="px-4"
 ```
 
 - Avoid hover-only interactions:
@@ -474,3 +649,8 @@ Only create custom components when:
 ## Global Enforcement Rule
 
 > Every UI must be responsive and built primarily using shadcn/ui primitives.
+
+## 8. Global variables:
+- Should place messages, error codes, constants in a centralized file
+- Should put all global variables in a centralized file
+- Should put path/Pages into a centralized file

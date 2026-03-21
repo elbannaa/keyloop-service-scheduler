@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { ApiResponse, ErrorCode, Messages } from '../constants/response';
 
 export const errorHandler = (
   err: Error,
@@ -8,8 +9,16 @@ export const errorHandler = (
 ): void => {
   console.error('Unhandled error:', err);
 
-  res.status(500).json({
-    error: 'Internal Server Error',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong',
-  });
+  const response: ApiResponse<null> = {
+    success: false,
+    code: 500,
+    message: Messages.INTERNAL_ERROR,
+    data: undefined, // ensure data is absent or set to what the new rules require
+    errors: {
+      details: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong',
+      code: ErrorCode.INTERNAL_ERROR
+    }
+  };
+
+  res.status(500).json(response);
 };

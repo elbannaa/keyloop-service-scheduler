@@ -1,11 +1,13 @@
 import React from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logoutUser } from '@/store/authSlice';
-import { Calendar, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Calendar, LogOut, Users, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const HomePage: React.FC = () => {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const { user, loading } = useAppSelector((state) => state.auth);
 
   const handleLogout = () => {
@@ -86,6 +88,32 @@ const HomePage: React.FC = () => {
             <Button variant="outline" size="lg" className="h-12 px-8 text-base font-semibold w-full sm:w-auto">
               View Schedule
             </Button>
+          </div>
+          
+          <div className="pt-12 grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            <div 
+              onClick={() => navigate('/dealerships')}
+              className="bg-card hover:bg-muted/50 transition-colors border border-border p-6 rounded-2xl flex flex-col items-center justify-center text-center cursor-pointer shadow-sm hover:shadow-md group"
+            >
+              <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Building2 className="w-7 h-7 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground">Dealerships</h3>
+              <p className="text-muted-foreground mt-2">View and manage service dealerships.</p>
+            </div>
+            
+            {user?.role === 'ADMIN' && (
+              <div 
+                onClick={() => navigate('/users')}
+                className="bg-card hover:bg-muted/50 transition-colors border border-border p-6 rounded-2xl flex flex-col items-center justify-center text-center cursor-pointer shadow-sm hover:shadow-md group"
+              >
+                <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <Users className="w-7 h-7 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold text-foreground">Manage Users</h3>
+                <p className="text-muted-foreground mt-2">Manage employee and user access (Admin Only).</p>
+              </div>
+            )}
           </div>
         </section>
       </main>

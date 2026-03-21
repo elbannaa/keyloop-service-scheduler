@@ -9,18 +9,67 @@ datasource db {
 
 enum Role {
   USER
+  MANAGER
   ADMIN
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String
-  phone     String?
-  role      Role     @default(USER)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id           String       @id @default(uuid())
+  email        String       @unique
+  password     String
+  name         String
+  phone        String?
+  role         Role         @default(USER)
+  isActive     Boolean      @default(true) @map("is_active")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  managedDealerships Dealership[] @relation("DealershipManager")
 
   @@map("users")
+}
+
+model Dealership {
+  id          String       @id @default(uuid())
+  name        String
+  address     String
+  phone       String?
+  isActive    Boolean      @default(true) @map("is_active")
+  managerId   String?      @map("manager_id")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  manager     User?        @relation("DealershipManager", fields: [managerId], references: [id])
+  technicians Technician[]
+  vehicles    Vehicle[]
+
+  @@map("dealerships")
+}
+
+model Technician {
+  id           String     @id @default(uuid())
+  name         String
+  phone        String?
+  isActive     Boolean    @default(true) @map("is_active")
+  dealershipId String     @map("dealership_id")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  dealership   Dealership @relation(fields: [dealershipId], references: [id])
+
+  @@map("technicians")
+}
+
+model Vehicle {
+  id           String     @id @default(uuid())
+  make         String
+  model        String
+  year         Int
+  dealershipId String     @map("dealership_id")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  dealership   Dealership @relation(fields: [dealershipId], references: [id])
+
+  @@map("vehicles")
 }

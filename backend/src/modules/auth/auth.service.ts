@@ -70,6 +70,11 @@ export class AuthService {
       throw new AppError(401, 'Invalid email or password');
     }
 
+    // Check if user is active
+    if (!user.isActive) {
+      throw new AppError(403, 'Account is deactivated');
+    }
+
     // Generate token
     const token = this.generateToken(user.id, user.email, user.role);
 
@@ -106,7 +111,7 @@ export class AuthService {
     return jwt.sign(
       { userId, email, role },
       config.jwt.secret,
-      { expiresIn: config.jwt.expiresIn as string }
+      { expiresIn: config.jwt.expiresIn as any }
     );
   }
 
