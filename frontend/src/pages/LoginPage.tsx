@@ -1,27 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { loginUser, clearError } from '@/store/authSlice';
-import { Calendar } from 'lucide-react';
-
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+  Form,
+  Input,
+  Button,
+  Typography,
+  Alert,
+  theme
+} from 'antd';
+import {
+  UserOutlined,
+  LockOutlined,
+  CalendarOutlined
+} from '@ant-design/icons';
+
+const { Title, Text } = Typography;
 
 const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { loading, error, token } = useAppSelector((state) => state.auth);
+  const { token: antdToken } = theme.useToken();
 
   useEffect(() => {
     if (token) {
@@ -35,115 +37,109 @@ const LoginPage: React.FC = () => {
     };
   }, [dispatch]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    dispatch(loginUser({ email, password }));
+  const onFinish = (values: any) => {
+    dispatch(loginUser({ email: values.email, password: values.password }));
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-background p-4 md:p-6 lg:p-8">
-      <div className="w-full max-w-md space-y-8">
+    <main
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: antdToken.colorBgLayout,
+        padding: antdToken.paddingLG
+      }}
+    >
+      <div style={{ width: '100%', maxWidth: 400 }}>
         {/* Logo / Brand */}
-        <header className="text-center space-y-4">
-          <div className="mx-auto flex items-center justify-center w-16 h-16 rounded-2xl bg-primary shadow-lg ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-            <Calendar className="w-8 h-8 text-primary-foreground" />
+        <div style={{ textAlign: 'center', marginBottom: antdToken.marginLG }}>
+          <div
+            style={{
+              margin: `0 auto ${antdToken.marginMD}px`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 64,
+              height: 64,
+              borderRadius: antdToken.borderRadiusLG,
+              backgroundColor: antdToken.colorPrimary,
+              boxShadow: '0 8px 16px rgba(16, 185, 129, 0.2)'
+            }}
+          >
+            <CalendarOutlined style={{ fontSize: 32, color: '#fff' }} />
           </div>
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-              Service Scheduler
-            </h1>
-            <p className="text-base text-muted-foreground md:text-lg">
-              Sign in to your account
-            </p>
-          </div>
-        </header>
+          <Title level={2} style={{ margin: 0 }}>Service Scheduler</Title>
+          <Text type="secondary" style={{ fontSize: antdToken.fontSizeLG }}>Sign in to your account</Text>
+        </div>
 
         {/* Card */}
-        <Card className="border-border shadow-xl md:shadow-2xl">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">Login</CardTitle>
-            <CardDescription className="text-center">
-              Enter your email and password to access your dashboard
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <div className="bg-destructive/10 border border-destructive/20 rounded-lg px-4 py-3 text-destructive text-sm font-medium animate-in fade-in zoom-in duration-200">
-                  {error}
-                </div>
-              )}
+        <Card bordered={false} style={{ boxShadow: antdToken.boxShadowSecondary }}>
+          <div style={{ textAlign: 'center', marginBottom: antdToken.paddingLG }}>
+            <Title level={4} style={{ margin: 0 }}>Login</Title>
+            <Text type="secondary">Enter your email and password to access your dashboard</Text>
+          </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  placeholder="you@example.com"
-                  className="h-11 md:h-10" // Mobile-friendly touch target
-                />
-              </div>
+          <Form
+            name="login"
+            layout="vertical"
+            onFinish={onFinish}
+            autoComplete="off"
+            requiredMark={false}
+          >
+            {error && (
+              <Form.Item>
+                <Alert message={error} type="error" showIcon closable onClose={() => dispatch(clearError())} />
+              </Form.Item>
+            )}
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
-                </div>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  placeholder="••••••••"
-                  className="h-11 md:h-10" // Mobile-friendly touch target
-                />
-              </div>
+            <Form.Item
+              label="Email"
+              name="email"
+              rules={[
+                { required: true, message: 'Please input your email!' },
+                { type: 'email', message: 'Please enter a valid email!' }
+              ]}
+            >
+              <Input
+                prefix={<UserOutlined style={{ color: antdToken.colorTextPlaceholder }} />}
+                placeholder="you@example.com"
+              />
+            </Form.Item>
 
+            <Form.Item
+              label="Password"
+              name="password"
+              rules={[{ required: true, message: 'Please input your password!' }]}
+            >
+              <Input.Password
+                prefix={<LockOutlined style={{ color: antdToken.colorTextPlaceholder }} />}
+                placeholder="your password"
+              />
+            </Form.Item>
+
+            <Form.Item>
               <Button
-                type="submit"
-                disabled={loading}
-                className="w-full h-11 md:h-10 text-base font-semibold transition-all hover:scale-[1.01] active:scale-[0.99]"
+                type="primary"
+                htmlType="submit"
+                block
+                loading={loading}
+                style={{ fontWeight: 600 }}
               >
-                {loading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                        fill="none"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                      />
-                    </svg>
-                    Signing in...
-                  </span>
-                ) : (
-                  'Sign In'
-                )}
+                Sign In
               </Button>
-            </form>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
-            <div className="text-center text-sm text-muted-foreground">
+            </Form.Item>
+          </Form>
+
+          <div style={{ textAlign: 'center' }}>
+            <Text type="secondary">
               Don't have an account?{' '}
-              <Link
-                to="/register"
-                className="text-primary hover:underline font-medium underline-offset-4 transition-colors"
-              >
+              <Link to="/register" style={{ color: antdToken.colorPrimary, fontWeight: 500 }}>
                 Create one
               </Link>
-            </div>
-          </CardFooter>
+            </Text>
+          </div>
         </Card>
       </div>
     </main>

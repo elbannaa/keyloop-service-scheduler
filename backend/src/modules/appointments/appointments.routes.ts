@@ -1,11 +1,14 @@
 import { Router } from 'express';
-import { AppointmentsController } from './appointments.controller';
-import { authGuard } from '../../middleware/auth';
+import * as appointmentsController from './appointments.controller';
+import { authGuard, requireRole } from '../../middleware/auth';
+import { Role } from '@prisma/client';
 
 const router = Router();
-const appointmentsController = new AppointmentsController();
 
-router.get('/availability', authGuard, (req, res) => appointmentsController.listAvailability(req, res));
-router.post('/', authGuard, (req, res) => appointmentsController.createAppointment(req, res));
+router.get('/availability', appointmentsController.listAvailability);
+router.post('/', appointmentsController.createAppointment);
+
+router.get('/schedule', authGuard, requireRole(Role.ADMIN, Role.MANAGER), appointmentsController.getSchedule);
+router.patch('/:id/cancel', authGuard, requireRole(Role.ADMIN, Role.MANAGER), appointmentsController.cancelAppointment);
 
 export default router;

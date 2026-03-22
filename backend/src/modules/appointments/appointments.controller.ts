@@ -1,85 +1,87 @@
-import { Response } from 'express';
-import { AuthRequest } from '../../middleware/auth';
+import { Request, Response } from 'express';
 import { AppointmentsService } from './appointments.service';
-import { ApiResponse, Messages } from '../../constants/response';
 import { ServiceType } from '@prisma/client';
+import { Messages } from '../../constants/response';
 
 const appointmentsService = new AppointmentsService();
 
-export class AppointmentsController {
-  async listAvailability(req: AuthRequest, res: Response): Promise<void> {
-    try {
-      const { dealershipId, serviceType, date } = req.query as Record<string, string>;
-
-      if (!dealershipId || !serviceType || !date) {
-        res.status(400).json({
-          success: false,
-          code: 400,
-          message: 'dealershipId, serviceType, and date are required',
-        });
-        return;
-      }
-
-      const slots = await appointmentsService.listAvailability(
-        dealershipId,
-        serviceType as ServiceType,
-        new Date(date)
-      );
-
-      res.status(200).json({
-        success: true,
-        code: 200,
-        message: Messages.SUCCESS,
-        data: { slots },
-      });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ success: false, code: 500, message: 'Internal server error' });
-    }
+export const createAppointment = async (req: Request, res: Response) => {
+  try {
+    const appointment = await appointmentsService.createAppointment(req.body);
+    res.status(201).json({
+      success: true,
+      code: 201,
+      message: Messages.SUCCESS,
+      data: appointment,
+    });
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({
+      success: false,
+      code: error.statusCode || 500,
+      message: error.message || Messages.INTERNAL_ERROR,
+    });
   }
+};
 
-  async createAppointment(req: AuthRequest, res: Response): Promise<void> {
-    try {
-      const { 
-        dealershipId, 
-        serviceType, 
-        startTime, 
-        customerName, 
-        customerEmail, 
-        vehicleInfo 
-      } = req.body;
-
-      if (!dealershipId || !serviceType || !startTime || !customerName || !customerEmail) {
-        res.status(400).json({
-          success: false,
-          code: 400,
-          message: 'Required fields missing',
-        });
-        return;
-      }
-
-      const appointment = await appointmentsService.createAppointment({
-        dealershipId,
-        serviceType: serviceType as ServiceType,
-        startTime: new Date(startTime),
-        customerName,
-        customerEmail,
-        vehicleInfo,
-      });
-
-      res.status(201).json({
-        success: true,
-        code: 201,
-        message: 'Appointment booked successfully',
-        data: { appointment },
-      });
-    } catch (error: any) {
-      console.error(error);
-      res.status(error.statusCode || 500).json({
-        success: false,
-        code: error.statusCode || 500,
-        message: error.message || 'Internal server error',
-      });
-    }
+export const listAvailability = async (req: Request, res: Response) => {
+  try {
+    const { dealershipId, serviceType, date } = req.query;
+    const slots = await appointmentsService.listAvailability(
+      dealershipId as string,
+      serviceType as ServiceType,
+      new Date(date as string)
+    );
+    res.json({
+      success: true,
+      code: 200,
+      message: Messages.SUCCESS,
+      data: slots,
+    });
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({
+      success: false,
+      code: error.statusCode || 500,
+      message: error.message || Messages.INTERNAL_ERROR,
+    });
   }
-}
+};
+
+export const getSchedule = async (req: Request, res: Response) => {
+  try {
+    const { dealershipId, date } = req.query;
+    const schedule = await appointmentsService.getDealershipSchedule(
+      dealershipId as string,
+      new Date(date as string)
+    );
+    res.json({
+      success: true,
+      code: 200,
+      message: Messages.SUCCESS,
+      data: schedule,
+    });
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({
+      success: false,
+      code: error.statusCode || 500,
+      message: error.message || Messages.INTERNAL_ERROR,
+    });
+  }
+};
+
+export const cancelAppointment = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    await appointmentsService.cancelAppointment(id);
+    res.json({
+      success: true,
+      code: 200,
+      message: Messages.SUCCESS,
+    });
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({
+      success: false,
+      code: error.statusCode || 500,
+      message: error.message || Messages.INTERNAL_ERROR,
+    });
+  }
+};

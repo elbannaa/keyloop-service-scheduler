@@ -3,46 +3,46 @@ import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { fetchDealerships, toggleDealershipStatus, updateDealership } from '@/store/dealershipsSlice';
 import {
   Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+  Input,
+  Button,
+  Badge,
+  Dropdown,
+  Typography,
+  Space,
+  message,
+  Row,
+  Col,
+  Tooltip,
+  theme as antdTheme
+} from 'antd';
 import {
-  Search,
-  Plus,
-  RefreshCw,
-  MoreVertical,
-  Building2,
-  MapPin,
-  Edit,
-  Check,
-  X,
-  Settings2,
-  ToggleLeft,
-  User,
-} from 'lucide-react';
+  SearchOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+  MoreOutlined,
+  EnvironmentOutlined,
+  EditOutlined,
+  CheckOutlined,
+  CloseOutlined,
+  SettingOutlined,
+  UserOutlined,
+  RetweetOutlined,
+  GlobalOutlined,
+  CarOutlined
+} from '@ant-design/icons';
 import { CreateDealershipDialog } from '@/components/forms/CreateDealershipDialog';
 import { ManageResourcesDialog } from '@/components/forms/ManageResourcesDialog';
 import { AssignManagerDialog } from '@/components/forms/AssignManagerDialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import debounce from 'lodash.debounce';
-import { cn } from "@/lib/utils";
 import { Role } from '@/constants/role';
+
+const { Text } = Typography;
 
 const DealershipsPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { data: dealerships, loading, error } = useAppSelector((state) => state.dealerships);
   const { user } = useAppSelector((state) => state.auth);
+  const { token } = antdTheme.useToken();
 
   const [search, setSearch] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -71,170 +71,226 @@ const DealershipsPage: React.FC = () => {
   };
 
   const handleSaveEdit = async (id: string) => {
-    await dispatch(updateDealership({ id, data: editForm })).unwrap();
-    setEditingId(null);
+    try {
+      await dispatch(updateDealership({ id, data: editForm })).unwrap();
+      message.success('Dealership updated successfully');
+      setEditingId(null);
+    } catch (err: any) {
+      message.error(err || 'Failed to update dealership');
+    }
   };
 
-  return (
-    <div className="flex flex-col h-full bg-background/50">
-      <div className="flex-1 overflow-auto">
-        <div className="mx-auto w-full space-y-6">
-          {/* Search Bar */}
-          <div className="flex items-center gap-2 justify-between">
-            <div className="relative w-full max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search"
-                className="pl-9 pr-8 h-8 text-xs"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+  const columns = [
+    {
+      title: 'Dealership',
+      key: 'name',
+      render: (_: any, d: any) => (
+        editingId === d.id ? (
+          <Input
+            value={editForm.name}
+            onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+            size="small"
+          />
+        ) : (
+          <Text strong style={{ fontSize: 13 }}>{d.name}</Text>
+        )
+      ),
+    },
+    {
+      title: 'Location',
+      key: 'address',
+      responsive: ['md' as const],
+      render: (_: any, d: any) => (
+        editingId === d.id ? (
+          <Input
+            value={editForm.address}
+            onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+            placeholder="Address"
+            size="small"
+          />
+        ) : (
+          <Space size={4}>
+            <EnvironmentOutlined style={{ fontSize: 12, color: token.colorTextSecondary }} />
+            <Text type="secondary" style={{ fontSize: 12 }}>{d.address}</Text>
+          </Space>
+        )
+      ),
+    },
+    {
+      title: 'Manager',
+      key: 'manager',
+      render: (_: any, d: any) => (
+        <Space direction="vertical" size={0}>
+          <Text strong style={{ fontSize: 12 }}>{d.manager?.name || 'Unassigned'}</Text>
+          {d.manager?.email && <Text type="secondary" style={{ fontSize: 11 }}>{d.manager.email}</Text>}
+        </Space>
+      ),
+    },
+    {
+      title: 'Status',
+      dataIndex: 'isActive',
+      key: 'status',
+      render: (isActive: boolean) => (
+        <Badge
+          status={isActive ? 'success' : 'error'}
+          text={isActive ? 'Active' : 'Inactive'}
+          style={{ fontSize: 12 }}
+        />
+      ),
+    },
+    {
+      title: 'Resources',
+      key: 'resources',
+      responsive: ['lg' as const],
+      render: (_: any, d: any) => (
+        <Space size={12}>
+          <Tooltip title="Technicians">
+            <Space size={4}>
+              <UserOutlined style={{ fontSize: 12, color: token.colorTextSecondary }} />
+              <Text type="secondary" style={{ fontSize: 12 }}>{d._count?.technicians || 0}</Text>
+            </Space>
+          </Tooltip>
+          <Tooltip title="Vehicles">
+            <Space size={4}>
+              <CarOutlined style={{ fontSize: 12, color: token.colorTextSecondary }} />
+              <Text type="secondary" style={{ fontSize: 12 }}>{d._count?.vehicles || 0}</Text>
+            </Space>
+          </Tooltip>
+        </Space>
+      ),
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      align: 'right' as const,
+      hidden: !canManage,
+      render: (_: any, d: any) => {
+        if (editingId === d.id) {
+          return (
+            <Space>
+              <Button
+                type="text"
+                size="small"
+                icon={<CheckOutlined />}
+                style={{ color: token.colorSuccess }}
+                onClick={() => handleSaveEdit(d.id)}
               />
-              {search && (
-                <button
-                  onClick={() => setSearch('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors h-5 w-5 flex items-center justify-center rounded-full hover:bg-muted"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              )}
-            </div>
+              <Button
+                type="text"
+                size="small"
+                icon={<CloseOutlined />}
+                danger
+                onClick={() => setEditingId(null)}
+              />
+            </Space>
+          );
+        }
 
-            {error && (
-              <div className="bg-destructive/10 text-destructive p-4 rounded-lg flex items-center gap-3">
-                <Building2 className="h-5 w-5" />
-                <p className="font-medium text-sm">{error}</p>
-              </div>
-            )}
+        const menuItems = [
+          {
+            key: 'edit',
+            icon: <EditOutlined />,
+            label: 'Edit Details',
+            onClick: () => handleStartEdit(d),
+          },
+          {
+            key: 'resources',
+            icon: <SettingOutlined />,
+            label: 'Manage Resources',
+            onClick: () => setManageResource({ id: d.id, name: d.name }),
+          },
+          ...(user?.role === Role.ADMIN ? [{
+            key: 'assign',
+            icon: <UserOutlined />,
+            label: 'Assign Manager',
+            onClick: () => setAssignManagerModal({ id: d.id, name: d.name, managerId: d.managerId }),
+          }] : []),
+          {
+            key: 'status',
+            icon: <RetweetOutlined />,
+            label: d.isActive ? 'Deactivate' : 'Activate',
+            onClick: () => dispatch(toggleDealershipStatus({ id: d.id, currentStatus: d.isActive })),
+          },
+        ];
 
-            <div className="flex items-center gap-2">
-              <Button className="hover:cursor-pointer h-8 w-8" variant="outline" size="icon" onClick={() => dispatch(fetchDealerships({ search }))} disabled={loading}>
-                <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
+        return (
+          <Dropdown menu={{ items: menuItems }} trigger={['click']} placement="bottomRight">
+            <Button type="text" icon={<MoreOutlined />} />
+          </Dropdown>
+        );
+      },
+    },
+  ];
+
+  return (
+    <Space direction="vertical" size={token.paddingLG} style={{ width: '100%', paddingBottom: token.paddingLG }}>
+      <Row gutter={[token.paddingMD, token.paddingMD]} align="middle" justify="space-between">
+        <Col xs={24} sm={12} md={8}>
+          <Input
+            placeholder="Search dealerships..."
+            prefix={<SearchOutlined style={{ color: token.colorTextPlaceholder }} />}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            allowClear
+          />
+        </Col>
+        <Col>
+          <Space>
+            <Tooltip title="Refresh">
+              <Button
+                icon={<ReloadOutlined spin={loading} />}
+                onClick={() => dispatch(fetchDealerships({ search }))}
+                disabled={loading}
+              />
+            </Tooltip>
+            {user?.role === Role.ADMIN && (
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => setIsCreateOpen(true)}
+              >
+                Add Dealership
               </Button>
-              {user?.role === Role.ADMIN && (
-                <Button onClick={() => setIsCreateOpen(true)} className="flex items-center gap-2 h-8 text-xs">
-                  <Plus className="h-3 w-3" />
-                  <span>Add Dealership</span>
-                </Button>
-              )}
-            </div>
-          </div>
+            )}
+          </Space>
+        </Col>
+      </Row>
 
-          {/* Table Container */}
-          <div className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
-            <Table>
-              <TableHeader className="bg-muted/50">
-                <TableRow>
-                  <TableHead className="text-xs font-semibold tracking-wider">Dealership</TableHead>
-                  <TableHead className="hidden md:table-cell text-xs font-semibold tracking-wider">Location</TableHead>
-                  <TableHead className="text-xs font-semibold tracking-wider">Manager</TableHead>
-                  <TableHead className="text-xs font-semibold tracking-wider">Status</TableHead>
-                  <TableHead className="hidden lg:table-cell text-xs font-semibold tracking-wider">Resources</TableHead>
-                  {canManage && <TableHead className="text-right text-xs font-semibold tracking-wider">Actions</TableHead>}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {dealerships.length === 0 && !loading && (
-                  <TableRow>
-                    <TableCell colSpan={canManage ? 5 : 4} className="h-32 text-center text-muted-foreground">
-                      No dealerships found matching your search.
-                    </TableCell>
-                  </TableRow>
-                )}
-                {dealerships.map((d) => (
-                  <TableRow key={d.id} className="hover:bg-muted/30">
-                    <TableCell>
-                      {editingId === d.id ? (
-                        <Input
-                          value={editForm.name}
-                          onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                          className="h-8 max-w-[200px] md:text-xs"
-                        />
-                      ) : (
-                        <div className="flex items-center gap-3">
-                          <span className="text-foreground text-xs">{d.name}</span>
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {editingId === d.id ? (
-                        <div className="space-y-2">
-                          <Input
-                            value={editForm.address}
-                            onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
-                            className="h-8 text-xs md:text-xs"
-                            placeholder="Address"
-                          />
-                        </div>
-                      ) : (
-                        <div className="flex flex-col text-xs">
-                          <div className="flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            <span>{d.address}</span>
-                          </div>
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col text-xs">
-                        <span className="font-medium">{d.manager?.name || 'Unassigned'}</span>
-                        {d.manager?.email && <span className="text-xs text-muted-foreground">{d.manager.email}</span>}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={d.isActive ? 'default' : 'destructive'} className="text-xs rounded-full">
-                        {d.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell">
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                        <span title="Technicians">👥 {d._count?.technicians || 0}</span>
-                        <span title="Vehicles">🚗 {d._count?.vehicles || 0}</span>
-                      </div>
-                    </TableCell>
-                    {canManage && (
-                      <TableCell className="text-right">
-                        {editingId === d.id ? (
-                          <div className="flex items-center justify-end gap-1">
-                            <Button size="icon" variant="ghost" className="h-8 w-8 text-primary" onClick={() => handleSaveEdit(d.id)}>
-                              <Check className="h-4 w-4" />
-                            </Button>
-                            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => setEditingId(null)}>
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48">
-                              <DropdownMenuItem onClick={() => handleStartEdit(d)} className="flex items-center gap-2 text-xs">
-                                <Edit className="h-3 w-3" /> Edit Details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => setManageResource({ id: d.id, name: d.name })} className="flex items-center gap-2 text-xs">
-                                <Settings2 className="h-3 w-3" /> Manage Resources
-                              </DropdownMenuItem>
-                              {user?.role === Role.ADMIN && (
-                                <DropdownMenuItem onClick={() => setAssignManagerModal({ id: d.id, name: d.name, managerId: d.managerId })} className="flex items-center gap-2 text-xs">
-                                  <User className="h-3 w-3" /> Assign Manager
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuItem onClick={() => dispatch(toggleDealershipStatus({ id: d.id, currentStatus: d.isActive }))} className="flex items-center gap-2 text-xs">
-                                <ToggleLeft className="h-3 w-3" /> {d.isActive ? 'Deactivate' : 'Activate'}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+      {error && (
+        <div style={{
+          padding: `${token.paddingSM}px ${token.paddingMD}px`,
+          backgroundColor: token.colorErrorBg,
+          border: `1px solid ${token.colorErrorBorder}`,
+          borderRadius: token.borderRadius,
+          display: 'flex',
+          alignItems: 'center',
+          gap: token.paddingSM
+        }}>
+          <GlobalOutlined style={{ color: token.colorError }} />
+          <Text strong style={{ color: token.colorError }}>{error}</Text>
         </div>
+      )}
+
+      <div style={{
+        backgroundColor: token.colorBgContainer,
+        borderRadius: token.borderRadiusLG,
+        border: `1px solid ${token.colorBorderSecondary}`,
+        overflow: 'hidden'
+      }}>
+        <Table
+          columns={columns.filter(c => !c.hidden)}
+          dataSource={dealerships}
+          rowKey="id"
+          loading={loading}
+          pagination={{
+            pageSize: 10,
+            showSizeChanger: false,
+            hideOnSinglePage: true
+          }}
+          locale={{
+            emptyText: 'No dealerships found matching your search.'
+          }}
+        />
       </div>
 
       <CreateDealershipDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
@@ -256,7 +312,7 @@ const DealershipsPage: React.FC = () => {
           onClose={() => setAssignManagerModal(null)}
         />
       )}
-    </div>
+    </Space>
   );
 };
 

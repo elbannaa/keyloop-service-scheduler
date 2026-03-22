@@ -1,17 +1,7 @@
 import React, { useState } from 'react';
 import { useAppDispatch } from '@/store/hooks';
 import { addTechnician } from '@/store/dealershipsSlice';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
+import { Modal, Form, Input, message } from 'antd';
 
 interface AddTechnicianDialogProps {
   dealershipId: string;
@@ -22,66 +12,47 @@ interface AddTechnicianDialogProps {
 export const AddTechnicianDialog: React.FC<AddTechnicianDialogProps> = ({ dealershipId, open, onOpenChange }) => {
   const dispatch = useAppDispatch();
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ name: '' });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [form] = Form.useForm();
 
-  const validate = () => {
-    const newErrors: Record<string, string> = {};
-    if (!formData.name) newErrors.name = 'Name is required';
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validate()) return;
-
+  const handleSubmit = async (values: { name: string }) => {
     setLoading(true);
     try {
-      await dispatch(addTechnician({ id: dealershipId, data: formData })).unwrap();
+      await dispatch(addTechnician({ id: dealershipId, data: values })).unwrap();
+      message.success('Technician added successfully');
       onOpenChange(false);
-      setFormData({ name: '' });
+      form.resetFields();
     } catch (err: any) {
-      setErrors({ submit: err || 'Failed to add technician' });
+      message.error(err || 'Failed to add technician');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Add Technician</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="tech-name" className="text-xs font-semibold">Full Name</Label>
-            <Input
-              id="tech-name"
-              placeholder="Alice Smith"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className={cn("text-xs h-8", errors.name ? 'border-destructive' : '')}
-            />
-            {errors.name && <p className="text-[10px] text-destructive">{errors.name}</p>}
-          </div>
-
-
-          {errors.submit && (
-            <p className="text-[10px] text-destructive bg-destructive/10 p-2 rounded">{errors.submit}</p>
-          )}
-
-          <DialogFooter>
-            <Button type="button" variant="outline" className="text-xs h-8" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading} className="text-xs h-8">
-              {loading ? 'Adding...' : 'Add Technician'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <Modal
+      title="Add Technician"
+      open={open}
+      onOk={() => form.submit()}
+      onCancel={() => onOpenChange(false)}
+      confirmLoading={loading}
+      okText="Add Technician"
+      destroyOnClose
+    >
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={handleSubmit}
+        requiredMark={false}
+        style={{ marginTop: 24 }}
+      >
+        <Form.Item
+          label="Full Name"
+          name="name"
+          rules={[{ required: true, message: 'Please input technician name!' }]}
+        >
+          <Input placeholder="Alice Smith" />
+        </Form.Item>
+      </Form>
+    </Modal>
   );
 };

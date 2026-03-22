@@ -6,26 +6,27 @@ import {
   fetchVehicles,
   removeVehicle,
 } from '@/store/dealershipsSlice';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Trash2, UserPlus, Car, Loader2, Info } from 'lucide-react';
+import { 
+  Modal, 
+  Tabs, 
+  Table, 
+  Button, 
+  Badge, 
+  Space, 
+  Typography, 
+  Popconfirm, 
+  message,
+} from 'antd';
+import { 
+  DeleteOutlined, 
+  UserAddOutlined, 
+  CarOutlined, 
+  InfoCircleOutlined,
+} from '@ant-design/icons';
 import { AddTechnicianDialog } from './AddTechnicianDialog';
 import { AddVehicleDialog } from './AddVehicleDialog';
+
+const { Text } = Typography;
 
 interface ManageResourcesDialogProps {
   dealershipId: string;
@@ -42,7 +43,7 @@ export const ManageResourcesDialog: React.FC<ManageResourcesDialogProps> = ({
 }) => {
   const dispatch = useAppDispatch();
   const { technicians, vehicles, subResourceLoading } = useAppSelector((state) => state.dealerships);
-  const [activeTab, setActiveTab] = useState('technicians');
+  const [activeTab, setActiveTab] = useState('1');
   const [isAddTechOpen, setIsAddTechOpen] = useState(false);
   const [isAddVehOpen, setIsAddVehOpen] = useState(false);
 
@@ -53,149 +54,193 @@ export const ManageResourcesDialog: React.FC<ManageResourcesDialogProps> = ({
     }
   }, [open, dealershipId, dispatch]);
 
-  const handleRemoveTech = (techId: string) => {
-    if (confirm('Are you sure you want to remove this technician?')) {
-      dispatch(removeTechnician({ id: dealershipId, technicianId: techId }));
+  const handleRemoveTech = async (techId: string) => {
+    try {
+      await dispatch(removeTechnician({ id: dealershipId, technicianId: techId })).unwrap();
+      message.success('Technician removed successfully');
+    } catch (err: any) {
+      message.error(err || 'Failed to remove technician');
     }
   };
 
-  const handleRemoveVeh = (vehId: string) => {
-    if (confirm('Are you sure you want to remove this vehicle?')) {
-      dispatch(removeVehicle({ id: dealershipId, vehicleId: vehId }));
+  const handleRemoveVeh = async (vehId: string) => {
+    try {
+      await dispatch(removeVehicle({ id: dealershipId, vehicleId: vehId })).unwrap();
+      message.success('Vehicle removed successfully');
+    } catch (err: any) {
+      message.error(err || 'Failed to remove vehicle');
     }
   };
+
+  const techColumns = [
+    {
+      title: 'Name',
+      dataIndex: 'name',
+      key: 'name',
+      render: (text: string) => <Text strong style={{ fontSize: 13 }}>{text}</Text>,
+    },
+    {
+      title: 'Status',
+      dataIndex: 'isActive',
+      key: 'status',
+      render: (isActive: boolean) => (
+        <Badge 
+          status={isActive ? 'success' : 'default'} 
+          text={isActive ? 'Active' : 'Away'} 
+        />
+      ),
+    },
+    {
+      title: 'Action',
+      key: 'action',
+      align: 'right' as const,
+      render: (_: any, record: any) => (
+        <Popconfirm
+          title="Remove technician"
+          description="Are you sure you want to remove this technician?"
+          onConfirm={() => handleRemoveTech(record.id)}
+          okText="Yes"
+          cancelText="No"
+          okButtonProps={{ danger: true }}
+        >
+          <Button 
+            type="text" 
+            danger 
+            icon={<DeleteOutlined />} 
+          />
+        </Popconfirm>
+      ),
+    },
+  ];
+
+  const vehicleColumns = [
+    {
+      title: 'Make / Model',
+      key: 'makeModel',
+      render: (_: any, record: any) => (
+        <Text strong style={{ fontSize: 13 }}>{record.make} {record.model}</Text>
+      ),
+    },
+    {
+      title: 'Year',
+      dataIndex: 'year',
+      key: 'year',
+      render: (year: number) => <Text type="secondary">{year}</Text>,
+    },
+    {
+      title: 'Action',
+      key: 'action',
+      align: 'right' as const,
+      render: (_: any, record: any) => (
+        <Popconfirm
+          title="Remove vehicle"
+          description="Are you sure you want to remove this vehicle?"
+          onConfirm={() => handleRemoveVeh(record.id)}
+          okText="Yes"
+          cancelText="No"
+          okButtonProps={{ danger: true }}
+        >
+          <Button 
+            type="text" 
+            danger 
+            icon={<DeleteOutlined />} 
+          />
+        </Popconfirm>
+      ),
+    },
+  ];
+
+  const items = [
+    {
+      key: '1',
+      label: (
+        <span>
+          <UserAddOutlined />
+          Technicians ({technicians.length})
+        </span>
+      ),
+      children: (
+        <Space direction="vertical" style={{ width: '100%' }} size={16}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text type="secondary" strong style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Staff Roster
+            </Text>
+            <Button 
+              type="primary" 
+              icon={<UserAddOutlined />} 
+              onClick={() => setIsAddTechOpen(true)}
+            >
+              Add Technician
+            </Button>
+          </div>
+          <Table 
+            columns={techColumns} 
+            dataSource={technicians} 
+            rowKey="id"
+            loading={subResourceLoading && technicians.length === 0}
+            pagination={false}
+            size="middle"
+          />
+        </Space>
+      ),
+    },
+    {
+      key: '2',
+      label: (
+        <span>
+          <CarOutlined />
+          Service Vehicles ({vehicles.length})
+        </span>
+      ),
+      children: (
+        <Space direction="vertical" style={{ width: '100%' }} size={16}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text type="secondary" strong style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Fleet Management
+            </Text>
+            <Button 
+              type="primary" 
+              icon={<CarOutlined />} 
+              onClick={() => setIsAddVehOpen(true)}
+            >
+              Add Vehicle
+            </Button>
+          </div>
+          <Table 
+            columns={vehicleColumns} 
+            dataSource={vehicles} 
+            rowKey="id"
+            loading={subResourceLoading && vehicles.length === 0}
+            pagination={false}
+            size="middle"
+          />
+        </Space>
+      ),
+    },
+  ];
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[700px] h-[600px] flex flex-col p-0 overflow-hidden">
-          <DialogHeader className="p-6 pb-0">
-            <DialogTitle className="flex items-center gap-2 text-xl font-bold">
-              <Info className="h-4 w-4 text-primary" />
-              Manage {dealershipName}
-            </DialogTitle>
-          </DialogHeader>
-
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col mt-4">
-            <div className="px-6 border-b border-border">
-              <TabsList className="grid h-8 w-full grid-cols-2">
-                <TabsTrigger value="technicians" className="flex items-center gap-2 text-xs">
-                  Technicians ({technicians.length})
-                </TabsTrigger>
-                <TabsTrigger value="vehicles" className="flex items-center gap-2 text-xs">
-                  Service Vehicles ({vehicles.length})
-                </TabsTrigger>
-              </TabsList>
-            </div>
-
-            <div className="flex-1 overflow-auto p-6 pt-4">
-              <TabsContent value="technicians" className="m-0 space-y-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                    Staff Roster
-                  </h3>
-                  <Button size="sm" onClick={() => setIsAddTechOpen(true)} className="gap-2 text-xs h-8">
-                    <UserPlus className="h-3 w-3" /> Add Technician
-                  </Button>
-                </div>
-
-                <div className="rounded-md border border-border bg-card">
-                  <Table>
-                    <TableHeader className="bg-muted/50">
-                      <TableRow>
-                        <TableHead className="text-xs font-semibold tracking-wider">Name</TableHead>
-                        <TableHead className="text-xs font-semibold tracking-wider">Status</TableHead>
-                        <TableHead className="text-right text-xs font-semibold tracking-wider">Action</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {subResourceLoading && technicians.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={4} className="h-24 text-center">
-                            <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
-                          </TableCell>
-                        </TableRow>
-                      ) : technicians.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={4} className="h-24 text-center text-muted-foreground italic">
-                            No technicians assigned to this location.
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        technicians.map((t) => (
-                          <TableRow key={t.id}>
-                            <TableCell className="font-medium text-xs">{t.name}</TableCell>
-                            <TableCell>
-                              <Badge variant={t.isActive ? "default" : "secondary"} className="text-[10px] uppercase rounded-full">
-                                {t.isActive ? "Active" : "Away"}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button variant="ghost" size="icon" onClick={() => handleRemoveTech(t.id)} className="h-8 w-8 text-destructive hover:text-white hover:bg-destructive">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="vehicles" className="m-0 space-y-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                    Fleet Management
-                  </h3>
-                  <Button size="sm" onClick={() => setIsAddVehOpen(true)} className="gap-2 text-xs h-8">
-                    <Car className="h-3 w-3" /> Add Vehicle
-                  </Button>
-                </div>
-
-                <div className="rounded-md border border-border bg-card">
-                  <Table>
-                    <TableHeader className="bg-muted/50">
-                      <TableRow>
-                        <TableHead className="text-xs font-semibold tracking-wider">Make / Model</TableHead>
-                        <TableHead className="text-xs font-semibold tracking-wider">Year</TableHead>
-                        <TableHead className="text-right text-xs font-semibold tracking-wider">Action</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {subResourceLoading && vehicles.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={3} className="h-24 text-center">
-                            <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
-                          </TableCell>
-                        </TableRow>
-                      ) : vehicles.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={3} className="h-24 text-center text-muted-foreground italic">
-                            No service vehicles available at this center.
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        vehicles.map((v) => (
-                          <TableRow key={v.id}>
-                            <TableCell className="font-medium text-xs">{v.make} {v.model}</TableCell>
-                            <TableCell className="text-muted-foreground text-[10px]">{v.year}</TableCell>
-                            <TableCell className="text-right">
-                              <Button variant="ghost" size="icon" onClick={() => handleRemoveVeh(v.id)} className="h-8 w-8 text-destructive hover:text-white hover:bg-destructive">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </TabsContent>
-            </div>
-          </Tabs>
-        </DialogContent>
-      </Dialog>
+      <Modal
+        title={
+          <Space>
+            <InfoCircleOutlined style={{ color: '#1890ff' }} />
+            <Text strong style={{ fontSize: 18 }}>Manage {dealershipName}</Text>
+          </Space>
+        }
+        open={open}
+        onCancel={() => onOpenChange(false)}
+        footer={null}
+        width={750}
+        destroyOnClose
+      >
+        <Tabs 
+          activeKey={activeTab} 
+          onChange={setActiveTab} 
+          items={items} 
+          style={{ marginTop: 16 }}
+        />
+      </Modal>
 
       <AddTechnicianDialog
         dealershipId={dealershipId}

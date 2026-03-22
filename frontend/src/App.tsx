@@ -6,6 +6,7 @@ import RegisterPage from '@/pages/RegisterPage';
 import UsersPage from '@/pages/UsersPage';
 import DealershipsPage from '@/pages/DealershipsPage';
 import BookingPage from '@/pages/BookingPage';
+import SchedulePage from '@/pages/SchedulePage';
 import NotFoundPage from '@/pages/NotFoundPage';
 import { ProtectedRoute } from '@/components/shared';
 
@@ -28,6 +29,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <DealershipsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/schedule"
+            element={
+              <ProtectedRoute>
+                <SchedulePage />
               </ProtectedRoute>
             }
           />

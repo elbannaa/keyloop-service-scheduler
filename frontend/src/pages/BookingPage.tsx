@@ -1,46 +1,63 @@
 import React, { useState, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchDealerships } from '@/store/dealershipsSlice';
-import { fetchAvailability, createAppointment, ServiceType, type ServiceTypeType, clearBookingState } from '@/store/appointmentsSlice';
+import {
+  fetchAvailability,
+  createAppointment,
+  ServiceType,
+  type ServiceTypeType,
+  clearBookingState
+} from '@/store/appointmentsSlice';
 import {
   Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
+  Button,
+  Input,
   Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Calendar as CalendarIcon, Clock, User, CheckCircle2, ChevronRight, Building2, Info } from 'lucide-react';
+  Badge,
+  Steps,
+  Typography,
+  Space,
+  Row,
+  Col,
+  DatePicker,
+  Result,
+  theme,
+  Empty,
+  message,
+  Alert
+} from 'antd';
+import {
+  ClockCircleOutlined,
+  UserOutlined,
+  CheckCircleOutlined,
+  RightOutlined,
+  BuildOutlined,
+  InfoCircleOutlined,
+  CarOutlined,
+  MailOutlined
+} from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { cn } from '@/lib/utils';
+import type { ColumnsType } from 'antd/es/table';
+import type { DealershipData as Dealership } from '@/store/dealershipsSlice';
 
-// We'll use a simple date input for now, but in a real app would use a DatePicker
+const { Title, Text, Paragraph } = Typography;
+const { Option } = Select;
+
 const BookingPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { data: dealerships } = useAppSelector((state) => state.dealerships);
   const { availableSlots, loading: slotsLoading, bookingLoading, lastBooking, error } = useAppSelector((state) => state.appointments);
+  const { token } = theme.useToken();
 
-  const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({
+  const [currentStep, setCurrentStep] = useState(0);
+  const [formData, setFormData] = useState<{
+    serviceType: ServiceTypeType | '';
+    date: string | undefined;
+    customerName: string;
+    customerEmail: string;
+    vehicleInfo: string;
+  }>({
     serviceType: '' as ServiceTypeType | '',
     date: dayjs().format('YYYY-MM-DD'),
     customerName: '',
@@ -69,19 +86,23 @@ const BookingPage: React.FC = () => {
   const handleBooking = async () => {
     if (!selectedDealershipId || !formData.serviceType || !selectedSlot) return;
 
-    await dispatch(createAppointment({
-      dealershipId: selectedDealershipId,
-      serviceType: formData.serviceType,
-      startTime: selectedSlot,
-      customerName: formData.customerName,
-      customerEmail: formData.customerEmail,
-      vehicleInfo: formData.vehicleInfo,
-    }));
-    setStep(4);
+    try {
+      await dispatch(createAppointment({
+        dealershipId: selectedDealershipId,
+        serviceType: formData.serviceType,
+        startTime: selectedSlot,
+        customerName: formData.customerName,
+        customerEmail: formData.customerEmail,
+        vehicleInfo: formData.vehicleInfo,
+      })).unwrap();
+      setCurrentStep(3);
+    } catch (err: any) {
+      message.error(err || 'Failed to create appointment');
+    }
   };
 
   const resetBooking = () => {
-    setStep(1);
+    setCurrentStep(0);
     setFormData({
       serviceType: '',
       date: dayjs().format('YYYY-MM-DD'),
@@ -103,347 +124,368 @@ const BookingPage: React.FC = () => {
     }
   };
 
-  return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-12">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-extrabold tracking-tight">Book a Service</h1>
-        <p className="text-muted-foreground">Find a dealership and schedule your appointment in minutes.</p>
-      </div>
+  const columns: ColumnsType<Dealership> = [
+    {
+      title: 'Dealership',
+      key: 'dealership',
+      render: (_, record) => (
+        <Space direction="vertical" size={0}>
+          <Text strong>{record.name}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>{record.address}</Text>
+        </Space>
+      ),
+    },
+    {
+      title: 'Action',
+      key: 'action',
+      align: 'right',
+      render: (_, record) => (
+        <Button
+          type={selectedDealershipId === record.id ? 'primary' : 'default'}
+          onClick={() => setSelectedDealershipId(record.id)}
+        >
+          {selectedDealershipId === record.id ? 'Selected' : 'Select'}
+        </Button>
+      ),
+    },
+  ];
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Step Indicator */}
-        <div className="lg:col-span-3">
-          <div className="flex items-center justify-between max-w-2xl mx-auto relative px-4">
-            {[1, 2, 3].map((num) => (
-              <div key={num} className="flex flex-col items-center gap-2 z-10">
-                <div className={cn(
-                  "h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm border-2 transition-all duration-300",
-                  step >= num ? "bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20" : "bg-background border-muted text-muted-foreground"
-                )}>
-                  {step > num ? <CheckCircle2 className="h-6 w-6" /> : num}
-                </div>
-                <span className={cn("text-xs font-semibold", step >= num ? "text-primary" : "text-muted-foreground")}>
-                  {num === 1 ? 'Details' : num === 2 ? 'Dealership' : 'Confirm'}
-                </span>
-              </div>
-            ))}
-            <div className="absolute top-5 left-8 right-8 h-[2px] bg-muted -z-0">
-              <div
-                className="h-full bg-primary transition-all duration-500"
-                style={{ width: step === 1 ? '0%' : step === 2 ? '50%' : '100%' }}
-              />
-            </div>
-          </div>
+  const steps = [
+    { title: 'Details', icon: <InfoCircleOutlined /> },
+    { title: 'Location', icon: <BuildOutlined /> },
+    { title: 'Confirm', icon: <CheckCircleOutlined /> },
+  ];
+
+  return (
+    <div style={{ maxWidth: 1200, margin: '0 auto', paddingBottom: token.paddingLG }}>
+      <Space direction="vertical" size={token.paddingLG} style={{ width: '100%' }}>
+        <div>
+          <Title level={2} style={{ marginBottom: token.paddingXS, fontWeight: 800 }}>Book a Service</Title>
+          <Text type="secondary">Find a dealership and schedule your appointment in minutes.</Text>
         </div>
 
-        {/* Form Area */}
-        <div className="lg:col-span-2 space-y-6">
-          {step === 1 && (
-            <Card className="border-border shadow-md">
-              <CardHeader>
-                <CardTitle>Appointment Details</CardTitle>
-                <CardDescription>Tell us what you need and when.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="serviceType" className="text-xs font-semibold">Service Type</Label>
-                    <Select
-                      value={formData.serviceType}
-                      onValueChange={(val) => setFormData({ ...formData, serviceType: val as ServiceTypeType })}
+        {currentStep < 3 && (
+          <div style={{ maxWidth: 800, margin: '0 auto', width: '100%' }}>
+            <Steps
+              current={currentStep}
+              items={steps}
+              style={{ marginBottom: token.paddingXL }}
+            />
+          </div>
+        )}
+
+        <Row gutter={[token.paddingLG, token.paddingLG]}>
+          <Col xs={24} lg={currentStep === 3 ? 24 : 16}>
+            {currentStep === 0 && (
+              <Card
+                title={<Space><InfoCircleOutlined /> Appointment Details</Space>}
+                bordered={false}
+                style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.05)', borderRadius: token.borderRadiusLG }}
+              >
+                <Space direction="vertical" size={token.paddingMD} style={{ width: '100%' }}>
+                  <Row gutter={token.paddingMD}>
+                    <Col span={12}>
+                      <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                        <Text strong style={{ fontSize: 12 }}>Service Type</Text>
+                        <Select
+                          style={{ width: '100%' }}
+                          placeholder="Select type..."
+                          value={formData.serviceType || undefined}
+                          onChange={(val) => setFormData({ ...formData, serviceType: val })}
+                        >
+                          <Option value={ServiceType.SALES_CONSULTATION}>Sales Consultation</Option>
+                          <Option value={ServiceType.DETAILED_CONSULTATION} >Detailed Consultation</Option>
+                          <Option value={ServiceType.REPAIR_MAINTENANCE}>Repair / Maintenance</Option>
+                        </Select>
+                      </Space>
+                    </Col>
+                    <Col span={12}>
+                      <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                        <Text strong style={{ fontSize: 12 }}>Preferred Date</Text>
+                        <DatePicker
+                          style={{ width: '100%' }}
+                          value={formData.date ? dayjs(formData.date) : null}
+                          onChange={(date) => setFormData({ ...formData, date: date?.format('YYYY-MM-DD') })}
+                          disabledDate={(current) => current && current < dayjs().startOf('day')}
+                        />
+                      </Space>
+                    </Col>
+                  </Row>
+
+                  <Row gutter={token.paddingMD}>
+                    <Col span={12}>
+                      <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                        <Text strong style={{ fontSize: 12 }}>Full Name</Text>
+                        <Input
+                          prefix={<UserOutlined style={{ color: token.colorTextPlaceholder }} />}
+                          placeholder="John Doe"
+                          value={formData.customerName}
+                          onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                        />
+                      </Space>
+                    </Col>
+                    <Col span={12}>
+                      <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                        <Text strong style={{ fontSize: 12 }}>Email Address</Text>
+                        <Input
+                          prefix={<MailOutlined style={{ color: token.colorTextPlaceholder }} />}
+                          type="email"
+                          placeholder="john@example.com"
+                          value={formData.customerEmail}
+                          onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
+                        />
+                      </Space>
+                    </Col>
+                  </Row>
+
+                  <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                    <Text strong style={{ fontSize: 12 }}>Vehicle Info / Notes</Text>
+                    <Input
+                      prefix={<CarOutlined style={{ color: token.colorTextPlaceholder }} />}
+                      placeholder="e.g. 2022 Toyota Camry - Oil Change"
+                      value={formData.vehicleInfo}
+                      onChange={(e) => setFormData({ ...formData, vehicleInfo: e.target.value })}
+                    />
+                  </Space>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: token.paddingXS }}>
+                    <Button
+                      type="primary"
+                      onClick={() => setCurrentStep(1)}
+                      disabled={!formData.serviceType || !formData.customerName || !formData.customerEmail}
+                      icon={<RightOutlined />}
+                      iconPosition="end"
                     >
-                      <SelectTrigger id="serviceType" className="text-xs h-8">
-                        <SelectValue placeholder="Select type..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={ServiceType.SALES_CONSULTATION} className="text-xs">Sales Consultation</SelectItem>
-                        <SelectItem value={ServiceType.DETAILED_CONSULTATION} className="text-xs">Detailed Consultation</SelectItem>
-                        <SelectItem value={ServiceType.REPAIR_MAINTENANCE} className="text-xs">Repair / Maintenance</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      Continue
+                    </Button>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="date" className="text-xs font-semibold">Preferred Date</Label>
-                    <div className="relative">
-                      <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-                      <Input
-                        type="date"
-                        id="date"
-                        className="pl-9 text-xs h-8"
-                        min={dayjs().format('YYYY-MM-DD')}
-                        value={formData.date}
-                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name" className="text-xs font-semibold">Full Name</Label>
-                    <Input id="name" placeholder="John Doe" className="text-xs h-8" value={formData.customerName} onChange={(e) => setFormData({ ...formData, customerName: e.target.value })} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-xs font-semibold">Email Address</Label>
-                    <Input id="email" type="email" placeholder="john@example.com" className="text-xs h-8" value={formData.customerEmail} onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })} />
-                  </div>
-                </div>
-
-
-                <div className="space-y-2">
-                  <Label htmlFor="vehicle" className="text-xs font-semibold">Vehicle Info / Notes</Label>
-                  <Input id="vehicle" placeholder="e.g. 2022 Toyota Camry - Oil Change" className="text-xs h-8" value={formData.vehicleInfo} onChange={(e) => setFormData({ ...formData, vehicleInfo: e.target.value })} />
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-end">
-                <Button
-                  disabled={!formData.serviceType || !formData.customerName || !formData.customerEmail}
-                  onClick={() => setStep(2)}
-                  className="gap-2 text-xs h-8"
-                >
-                  Continue <ChevronRight className="h-3 w-3" />
-                </Button>
-              </CardFooter>
-            </Card>
-          )}
-
-          {step === 2 && (
-            <div className="space-y-6">
-              <Card className="border-border shadow-sm">
-                <CardHeader>
-                  <CardTitle>Select Dealership</CardTitle>
-                  <CardDescription>Available locations based on your requirements.</CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="text-xs font-semibold tracking-wider">Location</TableHead>
-                        <TableHead className="text-right text-xs font-semibold tracking-wider">Action</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {dealerships.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
-                            No active dealerships found.
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        dealerships.map((d) => (
-                          <TableRow
-                            key={d.id}
-                            className={cn(
-                              "cursor-pointer transition-colors",
-                              selectedDealershipId === d.id ? "bg-primary/5 border-l-4 border-l-primary" : "hover:bg-muted/50"
-                            )}
-                            onClick={() => setSelectedDealershipId(d.id)}
-                          >
-                            <TableCell>
-                              <div className="font-semibold">{d.name}</div>
-                              <div className="text-xs text-muted-foreground truncate max-w-[200px]">{d.address}</div>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button
-                                variant={selectedDealershipId === d.id ? 'default' : 'outline'}
-                                size="sm"
-                              >
-                                {selectedDealershipId === d.id ? 'Selected' : 'Select'}
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </CardContent>
+                </Space>
               </Card>
+            )}
 
-              {selectedDealershipId && (
-                <Card className="border-border shadow-md animate-in slide-in-from-top duration-300">
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Clock className="h-5 w-5 text-primary" />
-                      Pick a Time Slot
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
+            {currentStep === 1 && (
+              <Space direction="vertical" size={token.paddingLG} style={{ width: '100%' }}>
+                <Card
+                  title={<Space><BuildOutlined /> Select Dealership</Space>}
+                  bordered={false}
+                  styles={{ body: { padding: 0 } }}
+                  style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.05)', borderRadius: token.borderRadiusLG, overflow: 'hidden' }}
+                >
+                  <Table
+                    columns={columns}
+                    dataSource={dealerships}
+                    rowKey="id"
+                    pagination={false}
+                    locale={{ emptyText: <Empty description="No active dealerships found." /> }}
+                    onRow={(record) => ({
+                      onClick: () => setSelectedDealershipId(record.id),
+                      style: { cursor: 'pointer', backgroundColor: selectedDealershipId === record.id ? token.colorPrimaryBg : undefined }
+                    })}
+                  />
+                </Card>
+
+                {selectedDealershipId && (
+                  <Card
+                    title={<Space><ClockCircleOutlined /> Pick a Time Slot</Space>}
+                    bordered={false}
+                    style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.05)', borderRadius: token.borderRadiusLG }}
+                  >
                     {slotsLoading ? (
-                      <div className="flex items-center justify-center h-24 text-muted-foreground">
-                        Loading available times...
+                      <div style={{ padding: '40px 0', textAlign: 'center' }}>
+                        <Text type="secondary">Loading available times...</Text>
                       </div>
                     ) : availableSlots.length === 0 ? (
-                      <div className="bg-destructive/10 text-destructive p-4 rounded-lg text-sm flex items-center gap-2">
-                        <Info className="h-4 w-4" />
-                        No slots available for this date. Please try another date or location.
-                      </div>
+                      <Alert
+                        message="No slots available"
+                        description="Please try another date or location."
+                        type="warning"
+                        showIcon
+                      />
                     ) : (
-                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                      <Row gutter={[token.paddingSM, token.paddingSM]}>
                         {availableSlots.map((slot) => (
-                          <Button
-                            key={slot}
-                            variant={selectedSlot === slot ? 'default' : 'outline'}
-                            size="sm"
-                            className="text-xs"
-                            onClick={() => setSelectedSlot(slot)}
-                          >
-                            {dayjs(slot).format('HH:mm')}
-                          </Button>
+                          <Col key={slot} xs={8} sm={6} md={4}>
+                            <Button
+                              block
+                              type={selectedSlot === slot ? 'primary' : 'default'}
+                              onClick={() => setSelectedSlot(slot)}
+                            >
+                              {dayjs(slot).format('HH:mm')}
+                            </Button>
+                          </Col>
                         ))}
-                      </div>
+                      </Row>
                     )}
-                  </CardContent>
-                  <CardFooter className="flex justify-between border-t border-muted pt-6">
-                    <Button variant="ghost" className="text-xs h-8" onClick={() => setStep(1)}>Back</Button>
-                    <Button
-                      disabled={!selectedSlot || bookingLoading}
-                      className="text-xs h-8"
-                      onClick={() => setStep(3)}
-                    >
-                      Next Step
-                    </Button>
-                  </CardFooter>
-                </Card>
-              )}
-            </div>
-          )}
 
-          {step === 3 && (
-            <Card className="border-primary/20 shadow-xl overflow-hidden">
-              <div className="bg-primary/5 p-6 border-b border-primary/10">
-                <CardTitle className="text-xl">Confirm Your Booking</CardTitle>
-                <CardDescription>Review the details before finalizing.</CardDescription>
-              </div>
-              <CardContent className="p-6 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-4">
-                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                      <Building2 className="h-3 w-3" /> Dealership
-                    </h4>
-                    <div className="space-y-1">
-                      <p className="font-bold text-sm">{dealerships.find(d => d.id === selectedDealershipId)?.name}</p>
-                      <p className="text-xs text-muted-foreground">{dealerships.find(d => d.id === selectedDealershipId)?.address}</p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 32, borderTop: `1px solid ${token.colorBorderSecondary}`, paddingTop: token.paddingLG }}>
+                      <Button onClick={() => setCurrentStep(0)}>Back</Button>
+                      <Button
+                        type="primary"
+                        disabled={!selectedSlot || slotsLoading}
+                        onClick={() => setCurrentStep(2)}
+                      >
+                        Next Step
+                      </Button>
                     </div>
+                  </Card>
+                )}
+              </Space>
+            )}
 
-                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-6 flex items-center gap-2">
-                      <CalendarIcon className="h-3 w-3" /> Schedule
-                    </h4>
-                    <div className="space-y-1">
-                      <p className="font-bold text-sm">{dayjs(selectedSlot!).format('dddd, MMMM D, YYYY')}</p>
-                      <p className="text-primary font-bold text-sm">{dayjs(selectedSlot!).format('h:mm A')}</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                      <Info className="h-3 w-3" /> Service
-                    </h4>
-                    <div className="space-y-1">
-                      <Badge variant="secondary" className="mb-1 text-[10px] h-4 rounded-full">{getServiceLabel(formData.serviceType as ServiceTypeType)}</Badge>
-                      <p className="text-xs text-muted-foreground">{formData.vehicleInfo || 'No notes provided'}</p>
-                    </div>
-
-                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-6 flex items-center gap-2">
-                      <User className="h-3 w-3" /> Customer
-                    </h4>
-                    <div className="space-y-1">
-                      <p className="font-bold text-sm">{formData.customerName}</p>
-                      <p className="text-xs text-muted-foreground">{formData.customerEmail}</p>
-                    </div>
-                  </div>
+            {currentStep === 2 && (
+              <Card
+                bordered={false}
+                styles={{ header: { backgroundColor: token.colorPrimaryBg, borderBottom: `1px solid ${token.colorPrimaryBorder}` } }}
+                title={<Title level={4} style={{ margin: 0 }}>Confirm Your Booking</Title>}
+                style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.1)', borderRadius: token.borderRadiusLG, overflow: 'hidden' }}
+              >
+                <div style={{ paddingBottom: token.paddingLG }}>
+                  <Text type="secondary">Review the details before finalizing.</Text>
                 </div>
+
+                <Row gutter={[token.paddingLG, token.paddingMD]}>
+                  <Col xs={24} md={12}>
+                    <Space direction="vertical" size={token.paddingLG} style={{ width: '100%' }}>
+                      <div>
+                        <Text type="secondary" strong style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Dealership</Text>
+                        <div style={{ marginTop: token.paddingXS }}>
+                          <Title level={5} style={{ margin: 0 }}>{dealerships.find(d => d.id === selectedDealershipId)?.name}</Title>
+                          <Text type="secondary" style={{ fontSize: 13 }}>{dealerships.find(d => d.id === selectedDealershipId)?.address}</Text>
+                        </div>
+                      </div>
+
+                      <div>
+                        <Text type="secondary" strong style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Schedule</Text>
+                        <div style={{ marginTop: token.paddingXS }}>
+                          <Title level={5} style={{ margin: 0 }}>{dayjs(selectedSlot!).format('dddd, MMMM D, YYYY')}</Title>
+                          <Title level={4} style={{ margin: 0, color: token.colorPrimary }}>{dayjs(selectedSlot!).format('h:mm A')}</Title>
+                        </div>
+                      </div>
+                    </Space>
+                  </Col>
+
+                  <Col xs={24} md={12}>
+                    <Space direction="vertical" size={token.paddingLG} style={{ width: '100%' }}>
+                      <div>
+                        <Text type="secondary" strong style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Service</Text>
+                        <div style={{ marginTop: token.paddingXS }}>
+                          <Badge
+                            color={token.colorPrimary}
+                            text={<Text strong>{getServiceLabel(formData.serviceType as ServiceTypeType)}</Text>}
+                            style={{ marginBottom: token.paddingXS }}
+                          />
+                          <br />
+                          <Text type="secondary" style={{ fontSize: 13 }}>{formData.vehicleInfo || 'No notes provided'}</Text>
+                        </div>
+                      </div>
+
+                      <div>
+                        <Text type="secondary" strong style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Customer</Text>
+                        <div style={{ marginTop: token.paddingXS }}>
+                          <Title level={5} style={{ margin: 0 }}>{formData.customerName}</Title>
+                          <Text type="secondary" style={{ fontSize: 13 }}>{formData.customerEmail}</Text>
+                        </div>
+                      </div>
+                    </Space>
+                  </Col>
+                </Row>
 
                 {error && (
-                  <div className="bg-destructive/10 text-destructive p-4 rounded-lg text-sm font-medium">
-                    {error}
-                  </div>
+                  <Alert message={error} type="error" showIcon style={{ marginTop: token.paddingLG }} />
                 )}
-              </CardContent>
-              <CardFooter className="flex justify-between bg-muted/30 p-6 border-t border-border">
-                <Button variant="ghost" className="text-xs h-8" onClick={() => setStep(2)}>Back</Button>
-                <Button
-                  className="px-8 text-xs h-8"
-                  disabled={bookingLoading}
-                  onClick={handleBooking}
-                >
-                  {bookingLoading ? 'Booking...' : 'Confirm Booking'}
-                </Button>
-              </CardFooter>
-            </Card>
-          )}
 
-          {step === 4 && lastBooking && (
-            <Card className="border-primary shadow-2xl overflow-hidden py-12 text-center animate-in zoom-in-95 duration-500">
-              <CardContent className="space-y-6">
-                <div className="h-20 w-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle2 className="h-12 w-12 text-primary" />
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 40, borderTop: `1px solid ${token.colorBorderSecondary}`, paddingTop: token.paddingLG }}>
+                  <Button onClick={() => setCurrentStep(1)}>Back</Button>
+                  <Button
+                    type="primary"
+                    loading={bookingLoading}
+                    onClick={handleBooking}
+                    style={{ paddingLeft: token.paddingXL, paddingRight: token.paddingXL }}
+                  >
+                    Confirm Booking
+                  </Button>
                 </div>
-                <div className="space-y-2">
-                  <CardTitle className="text-3xl font-black">Success!</CardTitle>
-                  <CardDescription className="text-base">Your appointment has been scheduled and assigned.</CardDescription>
+              </Card>
+            )}
+
+            {currentStep === 3 && lastBooking && (
+              <Result
+                status="success"
+                title={<Title level={2}>Success!</Title>}
+                subTitle="Your appointment has been scheduled and assigned."
+                extra={[
+                  <Button type="primary" key="again" onClick={resetBooking}>
+                    Make Another Booking
+                  </Button>
+                ]}
+              >
+                <div style={{ maxWidth: 400, margin: '0 auto' }}>
+                  <Card bordered style={{ textAlign: 'left', borderRadius: token.borderRadiusLG, backgroundColor: token.colorBgLayout }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: token.paddingMD, paddingBottom: token.paddingXS, borderBottom: `1px solid ${token.colorBorderSecondary}` }}>
+                      <Text type="secondary" strong style={{ fontSize: 10, textTransform: 'uppercase' }}>Booking ID</Text>
+                      <Text strong style={{ fontFamily: 'monospace' }}>{lastBooking.id.split('-')[0].toUpperCase()}</Text>
+                    </div>
+                    <Space direction="vertical" size={token.paddingSM} style={{ width: '100%' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <Text type="secondary" style={{ fontSize: 13 }}>Technician</Text>
+                        <Text strong style={{ fontSize: 13 }}>Assigned Automatically</Text>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <Text type="secondary" style={{ fontSize: 13 }}>Date</Text>
+                        <Text strong style={{ fontSize: 13 }}>{dayjs(lastBooking.startTime).format('MMM D, YYYY')}</Text>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <Text type="secondary" style={{ fontSize: 13 }}>Time</Text>
+                        <Text strong style={{ fontSize: 13, color: token.colorPrimary }}>{dayjs(lastBooking.startTime).format('h:mm A')}</Text>
+                      </div>
+                    </Space>
+                  </Card>
                 </div>
+              </Result>
+            )}
+          </Col>
 
-                <div className="max-w-md mx-auto bg-muted/30 rounded-xl p-4 text-left border border-border">
-                  <div className="flex justify-between items-center mb-4 pb-2 border-b border-border">
-                    <span className="text-xs font-bold uppercase text-muted-foreground">Booking ID</span>
-                    <span className="text-xs font-mono">{lastBooking.id.split('-')[0].toUpperCase()}</span>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Technician</span>
-                      <span className="font-semibold text-foreground">Assigned Automatically</span>
+          {currentStep < 3 && (
+            <Col xs={24} lg={8}>
+              <Space direction="vertical" size={token.paddingLG} style={{ width: '100%' }}>
+                <Card title={<Text strong type="secondary" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Need Assistance?</Text>} bordered={false}>
+                  <Space direction="vertical" size={token.paddingMD}>
+                    <div>
+                      <Text strong style={{ fontSize: 13 }}>Service Types</Text>
+                      <Paragraph type="secondary" style={{ fontSize: 12, marginTop: 4 }}>
+                        We offer three distinct service types tailored to your needs, from simple consultations to full vehicle maintenance.
+                      </Paragraph>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Date</span>
-                      <span className="font-semibold text-foreground">{dayjs(lastBooking.startTime).format('MMM D, YYYY')}</span>
+                    <div>
+                      <Text strong style={{ fontSize: 13 }}>Dynamic Scheduling</Text>
+                      <Paragraph type="secondary" style={{ fontSize: 12, marginTop: 4 }}>
+                        Our system automatically finds the best technician for your request based on real-time availability.
+                      </Paragraph>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Time</span>
-                      <span className="font-semibold text-primary">{dayjs(lastBooking.startTime).format('h:mm A')}</span>
+                    <div style={{ borderTop: `1px solid ${token.colorBorderSecondary}`, paddingTop: token.paddingMD }}>
+                      <Text type="secondary" style={{ fontSize: 10 }}>Keyloop Unified Scheduler v1.0</Text>
                     </div>
-                  </div>
-                </div>
+                  </Space>
+                </Card>
 
-                <Button variant="outline" onClick={resetBooking} className="mt-8">
-                  Make Another Booking
-                </Button>
-              </CardContent>
-            </Card>
+                {currentStep < 2 && (
+                  <Card bordered={false} style={{ backgroundColor: token.colorPrimaryBg, border: `1px solid ${token.colorPrimaryBorder}` }}>
+                    <Space align="start">
+                      <InfoCircleOutlined style={{ color: token.colorPrimary, marginTop: 4 }} />
+                      <div>
+                        <Text strong style={{ fontSize: 13 }}>Quick Tip</Text>
+                        <Paragraph type="secondary" style={{ fontSize: 12, marginTop: 4, fontStyle: 'italic' }}>
+                          You can book for any day between 8:00 AM and 6:00 PM. Weekends may have limited availability.
+                        </Paragraph>
+                      </div>
+                    </Space>
+                  </Card>
+                )}
+              </Space>
+            </Col>
           )}
-        </div>
-
-        {/* Sidebar Help */}
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Need Assistance?</CardTitle>
-            </CardHeader>
-            <CardContent className="text-xs space-y-4">
-              <div>
-                <h4 className="font-bold text-foreground">Service Types</h4>
-                <p className="text-muted-foreground mt-1 text-[10px] md:text-xs">We offer three distinct service types tailored to your needs, from simple consultations to full vehicle maintenance.</p>
-              </div>
-              <div>
-                <h4 className="font-bold text-foreground">Dynamic Scheduling</h4>
-                <p className="text-muted-foreground mt-1 text-[10px] md:text-xs">Our system automatically finds the best technician for your request based on real-time availability.</p>
-              </div>
-              <div className="pt-4 border-t border-border">
-                <p className="font-medium text-[10px] text-primary">Keyloop Unified Scheduler v1.0</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {step < 3 && (
-            <div className="bg-primary/5 rounded-xl p-6 border border-primary/10 flex items-start gap-4">
-              <Info className="h-6 w-6 text-primary shrink-0" />
-              <div className="space-y-1">
-                <p className="text-sm font-bold">Quick Tip</p>
-                <p className="text-xs text-muted-foreground italic">You can book for any day between 8:00 AM and 6:00 PM. Weekends may have limited availability.</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+        </Row>
+      </Space>
     </div>
   );
 };

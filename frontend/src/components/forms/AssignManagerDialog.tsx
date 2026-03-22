@@ -2,23 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchUsers } from '@/store/usersSlice';
 import { assignManager } from '@/store/dealershipsSlice';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
+import { Modal, Select, Typography, Space, message } from 'antd';
 import { Role } from '@/constants/role';
-import { Label } from '@/components/ui/label';
+
+const { Text } = Typography;
 
 interface AssignManagerDialogProps {
   dealershipId: string | null;
@@ -36,6 +23,7 @@ export const AssignManagerDialog: React.FC<AssignManagerDialogProps> = ({
   const dispatch = useAppDispatch();
   const { data: users, loading: usersLoading } = useAppSelector((state) => state.users);
   const [selectedManagerId, setSelectedManagerId] = useState<string>('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (dealershipId) {
@@ -46,57 +34,57 @@ export const AssignManagerDialog: React.FC<AssignManagerDialogProps> = ({
 
   const handleAssign = async () => {
     if (dealershipId && selectedManagerId) {
-      await dispatch(assignManager({ id: dealershipId, managerId: selectedManagerId }));
-      onClose();
+      setSubmitting(true);
+      try {
+        await dispatch(assignManager({ id: dealershipId, managerId: selectedManagerId })).unwrap();
+        message.success('Manager assigned successfully');
+        onClose();
+      } catch (err: any) {
+        message.error(err || 'Failed to assign manager');
+      } finally {
+        setSubmitting(false);
+      }
     }
   };
 
   return (
-    <Dialog open={!!dealershipId} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Assign Manager</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label className="text-xs font-semibold">Dealership</Label>
-            <div className="text-xs font-medium text-muted-foreground bg-muted p-2 rounded-md">
-              {dealershipName}
-            </div>
+    <Modal
+      title="Assign Manager"
+      open={!!dealershipId}
+      onOk={handleAssign}
+      onCancel={onClose}
+      confirmLoading={submitting}
+      okText="Assign Manager"
+      okButtonProps={{ disabled: !selectedManagerId || usersLoading }}
+      destroyOnClose
+    >
+      <Space direction="vertical" size={24} style={{ width: '100%', marginTop: 24 }}>
+        <Space direction="vertical" size={4} style={{ width: '100%' }}>
+          <Text strong style={{ fontSize: 12 }}>Dealership</Text>
+          <div style={{ padding: '8px 12px', backgroundColor: '#f5f5f5', borderRadius: 4, fontSize: 13 }}>
+            {dealershipName}
           </div>
-          <div className="space-y-2">
-            <Label className="text-xs font-semibold">Select Manager</Label>
-            <Select
-              value={selectedManagerId}
-              onValueChange={setSelectedManagerId}
-              disabled={usersLoading}
-            >
-              <SelectTrigger className="text-xs h-8">
-                <SelectValue placeholder="Search or select manager..." />
-              </SelectTrigger>
-              <SelectContent>
-                {users.length === 0 ? (
-                  <div className="p-2 text-xs text-muted-foreground">No managers found</div>
-                ) : (
-                  users.map((user) => (
-                    <SelectItem key={user.id} value={user.id} className="text-xs">
-                      {user.name} ({user.email})
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" className="text-xs h-8" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button className="text-xs h-8" onClick={handleAssign} disabled={!selectedManagerId || usersLoading}>
-            Assign Manager
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </Space>
+
+        <Space direction="vertical" size={4} style={{ width: '100%' }}>
+          <Text strong style={{ fontSize: 12 }}>Select Manager</Text>
+          <Select
+            style={{ width: '100%' }}
+            placeholder="Select a manager"
+            loading={usersLoading}
+            value={selectedManagerId || undefined}
+            onChange={setSelectedManagerId}
+            showSearch
+            filterOption={(input, option) =>
+              (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+            }
+            options={users.map(user => ({
+              value: user.id,
+              label: `${user.name} (${user.email})`,
+            }))}
+          />
+        </Space>
+      </Space>
+    </Modal>
   );
 };

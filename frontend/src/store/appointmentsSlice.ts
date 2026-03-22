@@ -20,6 +20,13 @@ export interface Appointment {
   dealershipId: string;
   technicianId: string;
   vehicleId?: string;
+  status: 'SCHEDULED' | 'COMPLETED' | 'CANCELED';
+}
+
+export interface TechnicianWithAppointments {
+  id: string;
+  name: string;
+  appointments: Appointment[];
 }
 
 interface AppointmentsState {
@@ -28,6 +35,7 @@ interface AppointmentsState {
   error: string | null;
   bookingLoading: boolean;
   lastBooking: Appointment | null;
+  schedule: TechnicianWithAppointments[];
 }
 
 const initialState: AppointmentsState = {
@@ -36,6 +44,7 @@ const initialState: AppointmentsState = {
   error: null,
   bookingLoading: false,
   lastBooking: null,
+  schedule: [],
 };
 
 export const fetchAvailability = createAsyncThunk(
@@ -57,9 +66,35 @@ export const createAppointment = createAsyncThunk(
   async (data: any, { rejectWithValue }) => {
     try {
       const response = await api.post(`/api/appointments`, data);
-      return response.data.data.appointment;
+      return response.data.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Booking failed');
+    }
+  }
+);
+
+export const fetchSchedule = createAsyncThunk(
+  'appointments/fetchSchedule',
+  async ({ dealershipId, date }: { dealershipId: string; date: string }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/api/appointments/schedule`, {
+        params: { dealershipId, date },
+      });
+      return response.data.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch schedule');
+    }
+  }
+);
+
+export const cancelAppointment = createAsyncThunk(
+  'appointments/cancelAppointment',
+  async (id: string, { rejectWithValue }) => {
+    try {
+      await api.patch(`/api/appointments/${id}/cancel`);
+      return id;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to cancel appointment');
     }
   }
 );
@@ -98,6 +133,24 @@ const appointmentsSlice = createSlice({
       .addCase(createAppointment.rejected, (state, action) => {
         state.bookingLoading = false;
         state.error = action.payload as string;
+      })
+      .addCase(fetchSchedule.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchSchedule.fulfilled, (state, action) => {
+        state.loading = false;
+        state.schedule = action.payload;
+      })
+      .addCase(fetchSchedule.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(cancelAppointment.fulfilled, (state, action) => {
+        state.schedule = state.schedule.map(tech => ({
+          ...tech,
+          appointments: tech.appointments.filter(app => app.id !== action.payload)
+        }));
       });
   },
 });

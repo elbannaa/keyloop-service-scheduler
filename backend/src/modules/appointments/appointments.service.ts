@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import prisma from '../../lib/prisma';
 import { AppError } from '../auth/auth.service';
-import { ServiceType } from '@prisma/client';
+import { ServiceType, AppointmentStatus } from '@prisma/client';
 
 interface CreateAppointmentInput {
   dealershipId: string;
@@ -41,11 +41,12 @@ export class AppointmentsService {
       where: { dealershipId },
     });
 
-    // Get all existing appointments for this dealership on this day
+    // Get all existing appointments for this dealership on this day, excluding canceled ones
     const appointments = await prisma.appointment.findMany({
       where: {
         dealershipId,
         startTime: { gte: dayStart.toDate(), lte: dayEnd.toDate() },
+        status: { not: AppointmentStatus.CANCELED },
       },
     });
 
@@ -104,12 +105,13 @@ export class AppointmentsService {
 
     if (!dealership) throw new AppError(404, 'Dealership not found');
 
-    // Get overlapping appointments
+    // Get overlapping appointments that are not canceled
     const overlapping = await prisma.appointment.findMany({
       where: {
         dealershipId: input.dealershipId,
         startTime: { lt: endTime },
         endTime: { gt: input.startTime },
+        status: { not: AppointmentStatus.CANCELED },
       },
     });
 
@@ -153,5 +155,32 @@ export class AppointmentsService {
     });
 
     return appointment;
+  }
+
+  async getDealershipSchedule(dealershipId: string, date: Date) {
+    const dayStart = dayjs(date).startOf('day');
+    const dayEnd = dayjs(date).endOf('day');
+
+    const technicians = await prisma.technician.findMany({
+      where: { dealershipId, isActive: true },
+      include: {
+        appointments: {
+          where: {
+            startTime: { gte: dayStart.toDate(), lte: dayEnd.toDate() },
+            status: { not: AppointmentStatus.CANCELED },
+          },
+          orderBy: { startTime: 'asc' },
+        },
+      },
+    });
+
+    return technicians;
+  }
+
+  async cancelAppointment(id: string) {
+    return prisma.appointment.update({
+      where: { id },
+      data: { status: AppointmentStatus.CANCELED },
+    });
   }
 }

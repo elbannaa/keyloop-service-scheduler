@@ -80,11 +80,18 @@ enum ServiceType {
   REPAIR_MAINTENANCE
 }
 
+enum AppointmentStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELED
+}
+
 model Appointment {
-  id              String      @id @default(uuid())
-  serviceType     ServiceType @map("service_type")
-  startTime       DateTime    @map("start_time")
-  endTime         DateTime    @map("end_time")
+  id              String            @id @default(uuid())
+  serviceType     ServiceType       @map("service_type")
+  status          AppointmentStatus @default(SCHEDULED)
+  startTime       DateTime          @map("start_time")
+  endTime         DateTime          @map("end_time")
   customerName    String      @map("customer_name")
   customerEmail   String      @map("customer_email")
   vehicleInfo     String?     @map("vehicle_info")
