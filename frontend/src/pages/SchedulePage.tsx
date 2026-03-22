@@ -24,7 +24,7 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
-import { DATE_TIME_DISPLAY_FORMAT } from '@/constants';
+import { DATE_TIME_DISPLAY_FORMAT, TIME_DISPLAY_FORMAT } from '@/constants';
 import { fetchAllAppointments } from '@/store/appointmentsSlice';
 
 const { Title, Text } = Typography;
@@ -97,7 +97,7 @@ const SchedulePage: React.FC = () => {
           <li key={app.id}>
             <Badge
               status={getStatusColor(app.status) as any}
-              text={<span style={{ fontSize: 10 }}>{dayjs(app.startTime).format('HH:mm')} {app.serviceType.split('_')[0]}</span>}
+              text={<span style={{ fontSize: 10 }}>{dayjs(app.startTime).format(TIME_DISPLAY_FORMAT)} {app.serviceType.split('_')[0]}</span>}
             />
           </li>
         ))}
@@ -274,7 +274,7 @@ const SchedulePage: React.FC = () => {
                                 <Text strong style={{ display: 'block' }}>{app.serviceType.replace(/_/g, ' ')}</Text>
                                 <Text type="secondary" style={{ fontSize: 12 }}>
                                   <ClockCircleOutlined style={{ marginRight: 4 }} />
-                                  {dayjs(app.startTime).format('HH:mm')} - {dayjs(app.endTime).format('HH:mm')}
+                                  {dayjs(app.startTime).format(TIME_DISPLAY_FORMAT)} - {dayjs(app.endTime).format(TIME_DISPLAY_FORMAT)}
                                 </Text>
                                 <div style={{ marginTop: 4 }}>
                                   <Text style={{ fontSize: 13 }}>

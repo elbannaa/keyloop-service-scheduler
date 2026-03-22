@@ -38,7 +38,7 @@ import {
   MailOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { DATE_TIME_DISPLAY_FORMAT } from '@/constants';
+import { DATE_DISPLAY_FORMAT, DATE_TIME_DISPLAY_FORMAT, TIME_DISPLAY_FORMAT } from '@/constants';
 
 const { Title, Text } = Typography;
 
@@ -392,9 +392,9 @@ const BookingPage: React.FC = () => {
                       <div>
                         <Text type="secondary" strong style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Schedule</Text>
                         <div style={{ marginTop: token.paddingXS }}>
-                          <Title level={5} style={{ margin: 0 }}>{dayjs(formData.startTime).format('dddd, MMMM D, YYYY')}</Title>
+                          <Title level={5} style={{ margin: 0 }}>{dayjs(formData.startTime).format(DATE_DISPLAY_FORMAT)}</Title>
                           <Title level={4} style={{ margin: 0, color: token.colorPrimary }}>
-                            {dayjs(formData.startTime).format('h:mm A')} - {dayjs(formData.endTime).format('h:mm A')}
+                            {dayjs(formData.startTime).format(TIME_DISPLAY_FORMAT)} - {dayjs(formData.endTime).format(TIME_DISPLAY_FORMAT)}
                           </Title>
                         </div>
                       </div>

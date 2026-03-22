@@ -14,6 +14,7 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { Role } from '@/constants/role';
+import { DATE_TIME_DISPLAY_FORMAT, TIME_DISPLAY_FORMAT } from '@/constants';
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -69,7 +70,7 @@ const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
           <Space orientation="vertical">
             <Text><strong>Type:</strong> {appointment.serviceType.replace(/_/g, ' ')}</Text>
             <Text><strong>Status:</strong> {getStatusTag(appointment.status)}</Text>
-            <Text><strong>Time:</strong> {dayjs(appointment.startTime).format('MMM D, YYYY HH:mm')} - {dayjs(appointment.endTime).format('HH:mm')}</Text>
+            <Text><strong>Time:</strong> {dayjs(appointment.startTime).format(DATE_TIME_DISPLAY_FORMAT)} - {dayjs(appointment.endTime).format(TIME_DISPLAY_FORMAT)}</Text>
           </Space>
         </Card>
 

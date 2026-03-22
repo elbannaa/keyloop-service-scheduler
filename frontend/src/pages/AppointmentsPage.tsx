@@ -22,7 +22,7 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { Role } from '@/constants/role';
-import { DATE_TIME_DISPLAY_FORMAT } from '@/constants';
+import { DATE_DISPLAY_FORMAT, DATE_TIME_DISPLAY_FORMAT, TIME_DISPLAY_FORMAT } from '@/constants';
 import AppointmentDetailModal from '@/components/appointments/AppointmentDetailModal';
 
 const { Title, Text } = Typography;
@@ -97,7 +97,7 @@ const AppointmentsPage: React.FC = () => {
       render: (_: any, record: any) => (
         <Space orientation="vertical" size={0}>
           <Text>{dayjs(record.startTime).format(DATE_TIME_DISPLAY_FORMAT)}</Text>
-          <Text type="secondary" style={{ fontSize: 12 }}>{dayjs(record.startTime).format('HH:mm')} - {dayjs(record.endTime).format('HH:mm')}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>{dayjs(record.startTime).format(TIME_DISPLAY_FORMAT)} - {dayjs(record.endTime).format(TIME_DISPLAY_FORMAT)}</Text>
         </Space>
       ),
     },
@@ -195,7 +195,7 @@ const AppointmentsPage: React.FC = () => {
           <Col xs={24} sm={12} md={6}>
             <DatePicker
               style={{ width: '100%' }}
-              onChange={(date) => handleFilterChange('date', date?.format('YYYY-MM-DD'))}
+              onChange={(date) => handleFilterChange('date', date?.format(DATE_DISPLAY_FORMAT))}
               placeholder="Select Date"
             />
           </Col>
@@ -219,7 +219,7 @@ const AppointmentsPage: React.FC = () => {
           dataSource={appointments}
           rowKey="id"
           loading={loading}
-          pagination={{ 
+          pagination={{
             pageSize: 10,
             showSizeChanger: false,
             hideOnSinglePage: true,
