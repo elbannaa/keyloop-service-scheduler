@@ -201,7 +201,7 @@ const DealershipsPage: React.FC = () => {
               style={{ backgroundColor: token.colorPrimary, color: token.colorWhite }}
               onClick={() => navigate('/booking', { state: { dealershipId: d.id, dealershipName: d.name } })}
             >
-              Book Appointment
+              Book
             </Button>
           );
         }

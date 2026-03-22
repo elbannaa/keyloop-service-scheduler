@@ -33,19 +33,16 @@ keyloop/
 │       ├── index.ts            # Express app entry point
 │       ├── config/
 │       │   └── index.ts        # Env-based config (PORT, DB, JWT, Redis)
-│       ├── lib/
-│       │   ├── prisma.ts       # Prisma client singleton
-│       │   └── redis.ts        # ioredis client singleton
 │       ├── middleware/
 │       │   ├── auth.ts         # JWT guard + Redis blacklist check
 │       │   ├── errorHandler.ts # Global error handler
 │       │   └── logger.ts       # Pino request logger
 │       └── modules/
-│           └── auth/
-│               ├── auth.routes.ts      # POST register/login/logout, GET me
-│               ├── auth.controller.ts  # Request handling + validation
-│               └── auth.service.ts     # Business logic (bcrypt, JWT, Redis)
-│
+│           ├── appointments/   # Appointment scheduling & availability
+│           ├── auth/           # Login, register, logout, me
+│           ├── dealerships/    # Dealership & tech/vehicle management
+│           └── users/          # User management (Admin only)
+
 └── frontend/                   # React SPA
     ├── package.json
     ├── tsconfig.json
@@ -54,19 +51,28 @@ keyloop/
     └── src/
         ├── main.tsx            # React DOM entry
         ├── index.css           # TailwindCSS v4 setup + theme
-        ├── App.tsx             # Router: /login, /register, / (protected)
+        ├── App.tsx             # Main router & provider setup
         ├── lib/
         │   └── axios.ts        # Axios instance + JWT interceptor
         ├── store/
         │   ├── index.ts        # Redux store config
         │   ├── hooks.ts        # Typed useAppDispatch / useAppSelector
         │   └── authSlice.ts    # Auth state + async thunks
-        ├── components/
-        │   └── ProtectedRoute.tsx  # Redirects to /login if unauthenticated
-        └── pages/
-            ├── LoginPage.tsx       # Email/password login form
-            ├── RegisterPage.tsx    # Name/email/password form
-            └── HomePage.tsx        # White page with nav bar + logout
+        ├── components/                   # Sub-divided UI components
+        │   ├── appointments/           # Appointment specific components
+        │   ├── forms/                  # Form composites
+        │   ├── layout/                 # App shell, Navbar, Sidebar
+        │   ├── shared/                 # Common UI (ProtectedRoute, etc.)
+        │   └── ui/                     # antd primitives
+        ├── pages/
+            ├── AppointmentsPage.tsx # List of appointments
+            ├── BookingPage.tsx      # Customer booking flow
+            ├── DealershipsPage.tsx  # Dealership management
+            ├── LoginPage.tsx        # Login form
+            ├── RegisterPage.tsx     # Registration form
+            ├── SchedulePage.tsx     # Admin/Manager calendar view
+            ├── UsersPage.tsx        # User management list
+            └── UnauthorizedPage.tsx # 403 access denied page
 ```
 
 ---
@@ -98,12 +104,49 @@ npm run dev
 
 ## API Endpoints
 
+### Auth
 | Method | Endpoint            | Auth     | Description           |
 |--------|---------------------|----------|-----------------------|
 | POST   | `/api/auth/register`| Public   | Create new user       |
 | POST   | `/api/auth/login`   | Public   | Login, returns JWT    |
 | POST   | `/api/auth/logout`  | Bearer   | Blacklist token       |
 | GET    | `/api/auth/me`      | Bearer   | Get current user      |
+
+### Users (Admin Only)
+| Method | Endpoint            | Auth     | Description           |
+|--------|---------------------|----------|-----------------------|
+| GET    | `/api/users`        | Admin    | List all users        |
+| POST   | `/api/users`        | Admin    | Create new user       |
+| GET    | `/api/users/:id`    | Admin    | Get user details      |
+| PATCH  | `/api/users/:id`    | Admin    | Update user info      |
+| PATCH  | `/api/users/:id/status`| Admin | Activate/Deactivate   |
+
+### Dealerships
+| Method | Endpoint                    | Auth     | Description           |
+|--------|-----------------------------|----------|-----------------------|
+| GET    | `/api/dealerships`          | Bearer   | List dealerships      |
+| POST   | `/api/dealerships`          | Admin    | Create dealership     |
+| GET    | `/api/dealerships/:id`      | Bearer   | Get dealership details|
+| PATCH  | `/api/dealerships/:id`      | Admin/Mgr| Update dealership     |
+| PATCH  | `/api/dealerships/:id/status`| Admin/Mgr| Toggle active state   |
+| POST   | `/api/dealerships/:id/technicians`| Admin/Mgr| Add technician  |
+| DELETE | `/api/dealerships/:id/technicians/:tid`| Admin/Mgr| Remove tech |
+| POST   | `/api/dealerships/:id/vehicles`| Admin/Mgr| Add vehicle        |
+| DELETE | `/api/dealerships/:id/vehicles/:vid`| Admin/Mgr| Remove vehicle |
+
+### Appointments
+| Method | Endpoint                    | Auth     | Description           |
+|--------|-----------------------------|----------|-----------------------|
+| GET    | `/api/appointments`         | Bearer   | List appointments     |
+| POST   | `/api/appointments`         | Public   | Create appointment    |
+| PATCH  | `/api/appointments/:id`     | Admin/Mgr| Update appointment    |
+| GET    | `/api/appointments/availability`| Public| Check available slots|
+| GET    | `/api/appointments/schedule`| Admin/Mgr| Get calendar schedule |
+| PATCH  | `/api/appointments/:id/cancel`| Admin/Mgr| Cancel appointment  |
+
+### General
+| Method | Endpoint            | Auth     | Description           |
+|--------|---------------------|----------|-----------------------|
 | GET    | `/api/health`       | Public   | Health check          |
 
 ---
@@ -112,7 +155,7 @@ npm run dev
 
 | Layer      | Technology                                  |
 |------------|---------------------------------------------|
-| Frontend   | React 18, Vite, TypeScript, TailwindCSS v4, ShadCn UI  |
+| Frontend   | React 19, Vite, TypeScript, TailwindCSS v4, Ant Design (antd) |
 | State      | Redux Toolkit                               |
 | HTTP       | Axios (with interceptors)                   |
 | Routing    | React Router DOM v6                         |
@@ -303,28 +346,22 @@ return {
 
 ## Frontend Coding & Styling Rules
 
-### 1. Color System — shadcn/ui Tokens Only
+### 1. Color System — HSL Variables & Ant Design Tokens
 
-All colors **must** come from shadcn/ui CSS variables. Never hard-code hex/RGB/HSL values in components.
+The project uses a hybrid color system. Core colors are defined as HSL variables in `index.css` and mapped to Tailwind colors and Ant Design tokens via `ConfigProvider` in `main.tsx`.
 
-| Usage          | Variable                  | Example class                     |
-|----------------|---------------------------|-----------------------------------|
-| Background     | `--background`            | `bg-background`                   |
-| Foreground     | `--foreground`            | `text-foreground`                 |
-| Primary        | `--primary`               | `bg-primary text-primary-foreground` |
-| Secondary      | `--secondary`             | `bg-secondary`                    |
-| Muted          | `--muted`                 | `bg-muted text-muted-foreground`  |
-| Accent         | `--accent`                | `bg-accent text-accent-foreground`|
-| Destructive    | `--destructive`           | `bg-destructive`                  |
-| Card           | `--card`                  | `bg-card text-card-foreground`    |
-| Popover        | `--popover`               | `bg-popover`                      |
-| Border         | `--border`                | `border-border`                   |
-| Input          | `--input`                 | `border-input`                    |
-| Ring           | `--ring`                  | `ring-ring`                       |
-| Chart 1 – 5    | `--chart-1` … `--chart-5` | `fill-chart-1`                   |
-| Sidebar        | `--sidebar-*`             | `bg-sidebar`                      |
+| Usage          | CSS Variable (HSL)      | Tailwind Class (v4)               |
+|----------------|-------------------------|-----------------------------------|
+| Background     | `--background`          | `bg-background`                   |
+| Foreground     | `--foreground`          | `text-foreground`                 |
+| Primary        | `--primary`             | `bg-primary`                      |
+| Secondary      | `--secondary`           | `bg-secondary`                    |
+| Muted          | `--muted`               | `bg-muted`                        |
+| Accent         | `--accent`              | `bg-accent`                       |
+| Destructive    | `--destructive`         | `bg-destructive`                  |
+| Border         | `--border`              | `border-border`                   |
 
-> **Rule:** If you need a color that doesn't exist, add a new CSS variable in `index.css` under the shadcn theme — do **not** inline a raw color value.
+> **Rule:** For `antd` components, the theme is automatically applied via `ConfigProvider`. For custom elements, use Tailwind classes mapped to these variables. Never hard-code hex/RGB values.
 
 ---
 
@@ -402,7 +439,7 @@ Organise components into **category sub-folders** under `src/components/`:
 
 ```
 src/components/
-├── ui/               # shadcn/ui primitives (Button, Input, Card, etc.)
+├── ui/               # antd primitives
 ├── layout/           # App shell, Navbar, Sidebar, Footer, PageContainer
 ├── forms/            # Form-related composites (LoginForm, SearchBar)
 ├── feedback/         # Toasts, Alerts, Modals, Skeletons
@@ -580,31 +617,27 @@ className="px-4"
 
 ---
 
-## 7. Component Priority — shadcn/ui First
+## 7. Component Priority — Ant Design (antd) First
 
-Always prioritize shadcn/ui components before building custom UI.
+Always prioritize Ant Design components before building custom UI.
 
 ---
 
 ### Rules
 
-- Use built-in components whenever possible:
-  - Button
-  - Input
-  - Card
-  - Dialog
-  - DropdownMenu
-  - Tabs
-  - Badge
-  - Avatar
-  - Skeleton
+- Use built-in `antd` components whenever possible:
+  - `Button`, `Input`, `Select`, `DatePicker`
+  - `Card`, `Table`, `List`
+  - `Modal`, `Drawer`, `Message`, `Notification`
+  - `Tabs`, `Steps`, `Badge`, `Avatar`
+  - `Typography` (`Title`, `Text`)
 
 ```tsx
 // Preferred
-import { Button } from '@/components/ui/button';
+import { Button, Table } from 'antd';
 
 // Avoid reinventing
-<button className="px-4 py-2 rounded-md">Click</button>
+<button className="px-4 py-2 rounded-md">Submit</button>
 ```
 
 ---
@@ -612,15 +645,8 @@ import { Button } from '@/components/ui/button';
 ### Composition over Reinvention
 
 ```tsx
-<Button variant="secondary" size="lg" className="w-full md:w-auto">
-  Submit
-</Button>
-```
-
-```tsx
-<Card>
-  <CardHeader />
-  <CardContent />
+<Card title="Appointment Detail" variant="borderless">
+  <Table columns={columns} dataSource={data} />
 </Card>
 ```
 
@@ -629,26 +655,26 @@ import { Button } from '@/components/ui/button';
 ### Custom Components — When Allowed
 
 Only create custom components when:
-- No equivalent exists in shadcn
-- You are composing multiple primitives into a reusable pattern
+- No equivalent exists in Ant Design
+- You are composing multiple `antd` primitives into a unique domain pattern (e.g., `AppointmentDetailModal`)
 
 ---
 
 ### Styling Rules
 
-- Use Tailwind + shadcn tokens only  
-- Never override with raw CSS unless necessary  
-- Prefer variant and size props over custom classes  
+- Use `antd` tokens via `ConfigProvider` for global consistency.
+- Use Tailwind CSS v4 for layout (flex, grid, spacing) and minor visual tweaks.
+- Prefer `antd` props (`type`, `size`, `danger`, `variant`) over custom classes for standard components.
 
 ---
 
-> Rule: If a UI element can be built using shadcn primitives, it must not be custom-built from scratch.
+> Rule: If a UI element can be built using Ant Design primitives, it must not be custom-built from scratch.
 
 ---
 
 ## Global Enforcement Rule
 
-> Every UI must be responsive and built primarily using shadcn/ui primitives.
+> Every UI must be responsive and built primarily using Ant Design (antd) components.
 
 ## 8. Global variables:
 - Should place messages, error codes, constants in a centralized file

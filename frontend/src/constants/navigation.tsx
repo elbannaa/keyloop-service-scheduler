@@ -1,10 +1,10 @@
 import {
-    Building2,
-    Users,
-    CalendarDays,
-    Calendar,
-    LayoutDashboard,
-} from 'lucide-react';
+    BuildOutlined,
+    UserOutlined,
+    ScheduleOutlined,
+    CalendarOutlined,
+    DashboardOutlined,
+} from '@ant-design/icons';
 import { Role } from '@/constants/role';
 import type { User } from '@/store/authSlice';
 
@@ -12,7 +12,7 @@ export const NAVIGATION_MENU_ITEMS = (user: User) => [
     {
         label: 'Dealerships',
         to: '/dealerships',
-        icon: Building2,
+        icon: BuildOutlined,
         active: location.pathname === '/dealerships' || location.pathname === '/',
         show: true,
         roles: [Role.ADMIN, Role.MANAGER, Role.USER],
@@ -20,7 +20,7 @@ export const NAVIGATION_MENU_ITEMS = (user: User) => [
     {
         label: 'Users',
         to: '/users',
-        icon: Users,
+        icon: UserOutlined,
         active: location.pathname === '/users',
         show: user?.role === Role.ADMIN,
         roles: [Role.ADMIN],
@@ -28,7 +28,7 @@ export const NAVIGATION_MENU_ITEMS = (user: User) => [
     {
         label: 'Book Service',
         to: '/booking',
-        icon: CalendarDays,
+        icon: ScheduleOutlined,
         active: location.pathname === '/booking',
         show: user?.role === Role.USER,
         roles: [Role.USER],
@@ -36,7 +36,7 @@ export const NAVIGATION_MENU_ITEMS = (user: User) => [
     {
         label: 'Appointments',
         to: '/appointments',
-        icon: LayoutDashboard,
+        icon: DashboardOutlined,
         active: location.pathname === '/appointments',
         show: !!user,
         roles: [Role.ADMIN, Role.MANAGER, Role.USER],
@@ -44,7 +44,7 @@ export const NAVIGATION_MENU_ITEMS = (user: User) => [
     {
         label: 'Schedule',
         to: '/schedule',
-        icon: Calendar,
+        icon: CalendarOutlined,
         active: location.pathname === '/schedule',
         show: user?.role === Role.ADMIN || user?.role === Role.MANAGER,
         roles: [Role.ADMIN, Role.MANAGER],

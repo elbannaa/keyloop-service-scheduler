@@ -4,7 +4,7 @@ import { useAppSelector } from '@/store/hooks';
 import type { RootState } from '@/store';
 import { Layout, Menu, Typography, theme } from 'antd';
 import type { MenuProps } from 'antd';
-import { CalendarDays } from 'lucide-react';
+import { ScheduleOutlined } from '@ant-design/icons';
 import { NAVIGATION_MENU_ITEMS } from '@/constants/navigation';
 
 const { Sider } = Layout;
@@ -26,7 +26,7 @@ export const Sidebar: React.FC<{
     .filter((item) => item.show)
     .map((item) => ({
       key: item.to,
-      icon: React.createElement(item.icon, { size: 18 }),
+      icon: <item.icon style={{ fontSize: 18 }} />,
       label: item.label,
       disabled: (item as any).disabled,
       onClick: () => navigate(item.to),
@@ -57,7 +57,7 @@ export const Sidebar: React.FC<{
             color: '#fff'
           }}
         >
-          <CalendarDays size={18} />
+          <ScheduleOutlined style={{ fontSize: 18 }} />
         </div>
         {!collapsed && (
           <Title level={5} style={{ margin: 0, color: token.colorTextHeading }}>

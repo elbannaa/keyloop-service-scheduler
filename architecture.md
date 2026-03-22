@@ -28,7 +28,7 @@
 │  │   Module   │ │   Module   │ │   Module     │ │    Module    │    │
 │  │            │ │            │ │              │ │              │    │
 │  │ • Register │ │ • CRUD     │ │ • Check      │ │ • Email via  │    │
-│  │ • Login    │ │ • Search   │ │  Availability│ │   Nodemailer │    │
+│  │ • Login    │ │ • Search   │ │  Availability│ │  MailService │    │
 │  │ • JWT      │ │ • Sort     │ │ • Lock Slot  │ │              │    │
 │  │            │ │ • Paginate │ │ • Confirm    │ │              │    │
 │  │            │ │            │ │ • Approve    │ │              │    │
@@ -46,9 +46,8 @@
 │─────────────────────────│      │─────────────────────────│
 │ • users                 │      │ • Slot Locks (TTL 5 min)│
 │ • dealerships           │      │ • Availability Cache    │
-│ • service_bays          │      │ • Session Store (JWT    │
-│ • technicians           │      │   blacklist)            │
-│ • vehicles              │      │                         │
+│ • technicians           │      │ • Session Store (JWT    │
+│ • vehicles (bays)       │      │   blacklist)            │
 │ • appointments          │      │                         │
 └─────────────────────────┘      └─────────────────────────┘
 ```
@@ -69,48 +68,49 @@ Preview Link: https://mermaid.ai/view/064bb723-d18e-48c2-9780-b9d710236b59
 - Manages user identity — registration, login, and JWT token issuance/validation. Ensures only authenticated users can access protected resources.
 
 #### Dealership Module
-- Handles all dealership-related operations: CRUD (create, read, update, delete), search by criteria, sorting, and pagination of dealership listings.
+- Handles all dealership-related operations: CRUD (create, read, update, delete), search by name/address, and filtering by vehicle compatibility (make/model/year) or minimum technician count.
 
 #### Booking Module
 - Orchestrates the appointment lifecycle: 
-  - Checking availability of time slots
-  - Locking a slot (via Redis) to prevent double-booking
-  - Confirming a booking
-  - Approving it (e.g., by dealership staff)
+  - Checking availability of time slots based on resource state (Technicians & Vehicles).
+  - Locking resources via Redis bitsets to prevent double-booking.
+  - Creating a booking request (Status: `PENDING`).
+  - Manager review and approval (Status: `SCHEDULED`).
 
 #### Notification Module
-- Sends transactional emails (booking confirmations, reminders, status updates) using Nodemailer as the email transport.
+- Sends transactional emails (booking confirmations, reminders, status updates) using `MailService` (Nodemailer) as the email transport.
 
 #### Availability Engine (Core Service)
-- The central scheduling brain. Manages Redis-based slot locking, detects time-slot collisions, matches appointments to available technicians and service bays, and calculates service durations to ensure conflict-free scheduling.
+- The central scheduling brain. Manages Redis-based slot locking, detects time-slot collisions, matches appointments to available technicians and vehicle bays, and calculates service durations to ensure conflict-free scheduling.
 
 ### Database
 #### PostgreSQL Database
-The primary relational data store. Persists all domain entities: users, dealerships, service_bays, technicians, vehicles, and appointments.
+The primary relational data store. Persists all domain entities: users, dealerships, technicians, vehicles (acting as service bays), and appointments.
 
 #### Redis
 An in-memory data store used for three purposes: slot locks with a 5-minute TTL to prevent race conditions during booking, availability caching for fast read access, and a session store for JWT blacklisting (e.g., on logout).
 
 ## 3. Data Flow
-Dealership create deals
-
-User search and select a deal for checking their availability
-
-User confirm booking
+1. **Resource Management**: Admin/Manager adds technicians and vehicle bays (represented by `Vehicle` model) to a dealership.
+2. **Availability Lookup**: Customer selects a service type and date; the `Availability Engine` queries Redis bitsets to find conflict-free slots.
+3. **Booking Request**: Customer submits details (Name, Email, Vehicle info); the system creates a `PENDING` appointment and locks the resources in Redis.
+4. **Manager Approval**: Manager reviews pending requests in the `Schedule` view, assigns/confirms a technician, and updates status to `SCHEDULED`.
 
 ## 4. Techstacks:
 | Technology | Justification |
 |---|---|
 | **React 18 + Vite** | Vite provides lightning-fast HMR and build times. React is the specified requirement. |
 | **TypeScript** | Catches bugs at compile time, improves developer experience with autocompletion, mandatory per requirements. |
-| **Shadcn UI + TailwindCSS** | Pre-built, accessible components with full customization. No vendor lock-in (you own the code). Free and open-source. |
+| **Ant Design (antd) + TailwindCSS** | Enterprise-grade UI library (antd) for complex components + Tailwind CSS v4 for layout and custom styling. |
 | **Redux Toolkit** | Specified in requirements. Handles complex booking state, auth tokens, and search filters cleanly. |
 | **Axios** | Specified in requirements. Built-in interceptors for JWT token attachment and error handling. |
 | **React Router DOM** | Specified in requirements. Handles protected routes (auth guard) and page navigation. |
-| **Node.js + Express** | Specified in requirements. Lightweight, mature, huge ecosystem. Express is simple enough for a monolith. |
-| **PostgreSQL** | Specified in requirements. Excellent for structured relational data (appointments ↔ technicians ↔ bays). Free and open-source. |
-| **Redis** | Specified in requirements. Perfect for TTL-based distributed locks (`SET NX EX`). Sub-millisecond reads for availability checks. Free and open-source. |
-| **Nodemailer + Gmail SMTP** | **Free solution.** Gmail allows 500 emails/day for free — more than enough for a demo. No API key or paid service needed, just a Gmail account with an App Password. |
-| **JSON Web Tokens (jsonwebtoken)** | Stateless auth tokens. No session storage needed server-side. Free library. Pair with `bcrypt` for password hashing. |
-| **Prisma ORM** | Type-safe database queries auto-generated from schema. Migrations built-in. Free and open-source. Excellent TypeScript integration. |
-| **Docker + Docker Compose** | Free. One command (`docker-compose up`) spins up the entire stack (app, PostgreSQL, Redis, Nginx) for demo. |
+| **Node.js + Express** | Backend runtime and web framework for the REST API. |
+| **PostgreSQL** | Primary relational database for persistent storage of users, appointments, and dealership data. |
+| **Redis** | High-performance in-memory store for slot locks, availability caching, and JWT blacklisting. |
+| **MailService (Nodemailer)** | Handles transactional emails (confirmations, reminders) via SMTP. |
+| **JSON Web Tokens** | Stateless authentication mechanism for secure API access. |
+| **Prisma ORM** | Type-safe database client and schema management. |
+| **DayJS** | Lightweight library for date and time parsing, validation, and manipulation. |
+| **Pino** | High-performance JSON logger for structured request and error tracking. |
+| **Docker + Docker Compose** | Containerization for consistent development and deployment environments. |

@@ -5,7 +5,6 @@ import {
   Table,
   Input,
   Button,
-  Badge,
   Select,
   Space,
   Dropdown,
@@ -224,7 +223,7 @@ const UsersPage: React.FC = () => {
 
       {error && (
         <Alert
-          message="Error"
+          title="Error"
           description={error}
           type="error"
           showIcon
