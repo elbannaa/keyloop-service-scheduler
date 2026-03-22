@@ -16,10 +16,11 @@ A full-stack appointment scheduling application for vehicle service dealerships.
 ```
 keyloop/
 ├── docker-compose.yml          # PostgreSQL + Redis containers
-├── agents.md                   # This file — source structure docs
-├── architecture.md             # System architecture document
-├── ArchitectureExpectations.md # Full architecture + observability doc
-├── Requirements.txt            # Project requirements
+├── README.md                   # General project documentation
+├── docs/                       # Project documentation
+│   ├── agents.md               # This file — source structure docs/guide agents
+│   ├── architecture.md         # System architecture document
+│   └── instructions.md         # Setup & Execution guide
 │
 ├── backend/                    # Express API server
 │   ├── package.json
@@ -98,7 +99,8 @@ npm run dev
 
 - Frontend: http://localhost:5173
 - Backend API: http://localhost:3001
-- Admin credentials: `admin@gmail.com` / `admin123`
+- Admin credentials: `admin@mail.com` / `password`
+(based on .env file)
 
 ---
 
