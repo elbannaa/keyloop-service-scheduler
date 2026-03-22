@@ -2,15 +2,17 @@ import dayjs from 'dayjs';
 import prisma from '../../lib/prisma';
 import { AppError } from '../auth/auth.service';
 import { ServiceType, AppointmentStatus } from '@prisma/client';
+import redis, { getRedisKey, getSlotRange } from '../../lib/redis';
 
 interface CreateAppointmentInput {
   dealershipId: string;
   serviceType: ServiceType;
   startTime: Date;
+  endTime: Date;
   customerName: string;
   customerEmail: string;
   vehicleInfo?: string;
-  vehicleId?: string; // Optional if customer selects a specific system vehicle
+  vehicleId?: string;
 }
 
 
@@ -31,76 +33,149 @@ export class AppointmentsService {
   async listAvailability(dealershipId: string, serviceType: ServiceType, date: Date) {
     const duration = this.getDuration(serviceType);
     const dayStart = dayjs(date).startOf('day');
-    const dayEnd = dayjs(date).endOf('day');
+    const workEnd = dayjs(date).endOf('day');
+    const dateStr = dayStart.format('YYYY-MM-DD');
 
-    // Get all technicians and system vehicles for this dealership
-    const technicians = await prisma.technician.findMany({
-      where: { dealershipId, isActive: true },
-    });
-
-    const vehicles = await prisma.vehicle.findMany({
-      where: { dealershipId },
-    });
-
-    // Get all existing appointments for this dealership on this day, excluding canceled ones
-    const appointments = await prisma.appointment.findMany({
-      where: {
-        dealershipId,
-        startTime: { gte: dayStart.toDate(), lte: dayEnd.toDate() },
-        status: { not: AppointmentStatus.CANCELED },
-      },
-    });
+    const { isActive, techIds, bayIds } = await this.getResources(dealershipId);
+    if (!isActive) return [];
 
     const availableSlots: Date[] = [];
+    let currentSlot = dayStart;
 
-    // Work hours: 8 AM to 6 PM
-    let currentSlot = dayStart.hour(8).minute(0).second(0);
-    const workEnd = dayStart.hour(18).minute(0).second(0);
+    while (currentSlot.add(duration, 'minute').isBefore(workEnd) || currentSlot.add(duration, 'minute').isSame(workEnd)) {
+      const slotEndTime = currentSlot.add(duration, 'minute');
+      const slots = getSlotRange(currentSlot.toDate(), slotEndTime.toDate());
 
-    while (currentSlot.add(duration, 'minute').isBefore(workEnd) || currentSlot.add(duration, 'minute').format('HH:mm') === '18:00') {
-      const slotEnd = currentSlot.add(duration, 'minute');
+      const techId = await this.getAvailableResource(
+        dealershipId,
+        dateStr,
+        'tech',
+        techIds,
+        slots
+      );
 
-      // Check if any technician is free
-      const freeTechnicians = technicians.filter(tech => {
-        // Better overlap check: (StartA < EndB) and (EndA > StartB)
-        const hasOverlap = appointments.some(app =>
-          app.technicianId === tech.id &&
-          currentSlot.isBefore(dayjs(app.endTime)) && slotEnd.isAfter(dayjs(app.startTime))
-        );
-        return !hasOverlap;
-      });
+      const bayId = techId ? await this.getAvailableResource(
+        dealershipId,
+        dateStr,
+        'bay',
+        bayIds,
+        slots
+      ) : null;
 
-      let isAvailable = freeTechnicians.length > 0;
+      if (techId && bayId) {
+        availableSlots.push(currentSlot.toDate());
+      }
 
-       // Only NEW_CAR_CONSULTATION *always* requires a dealership vehicle (the car being consulted on)
-       // VEHICLE_REPAIR and VEHICLE_MAINTENANCE require a dealership "vehicle slot" (service bay)
-       // So all current service types require a vehicle slot in this model.
-       const requiresVehicle = true; 
-
-       if (requiresVehicle) {
-         const freeVehicles = vehicles.filter(v => {
-           const hasOverlap = appointments.some(app =>
-             app.vehicleId === v.id &&
-             currentSlot.isBefore(dayjs(app.endTime)) && slotEnd.isAfter(dayjs(app.startTime))
-           );
-           return !hasOverlap;
-         });
-         isAvailable = isAvailable && freeVehicles.length > 0;
-       }
- 
-       if (isAvailable) {
-         availableSlots.push(currentSlot.toDate());
-       }
- 
-       currentSlot = currentSlot.add(15, 'minute'); // 15 min intervals
+      currentSlot = currentSlot.add(15, 'minute');
     }
 
     return availableSlots;
   }
 
+  private async getAvailableResource(
+    dealershipId: string,
+    dateStr: string,
+    type: 'tech' | 'bay',
+    resourceIds: string[],
+    slots: number[]
+  ): Promise<string | null> {
+    for (const id of resourceIds) {
+      const key = getRedisKey.busySlots(dealershipId, dateStr, type, id);
+      let isFree = true;
+      for (const slot of slots) {
+        if ((await redis.getbit(key, slot)) === 1) {
+          isFree = false;
+          break;
+        }
+      }
+      if (isFree) return id;
+    }
+    return null;
+  }
+
+  private async markSlots(
+    dealershipId: string,
+    dateStr: string,
+    type: 'tech' | 'bay',
+    resourceId: string,
+    slots: number[],
+    isBusy: boolean
+  ) {
+    const key = getRedisKey.busySlots(dealershipId, dateStr, type, resourceId);
+    for (const slot of slots) {
+      await redis.setbit(key, slot, isBusy ? 1 : 0);
+    }
+  }
+
+
+  async listAppointments(filters: {
+    userId: string;
+    userRole: string;
+    userEmail: string;
+    dealershipId?: string;
+    status?: AppointmentStatus;
+    date?: Date;
+    startDate?: Date;
+    endDate?: Date;
+  }) {
+    const where: any = {};
+
+    // Role-based access control
+    if (filters.userRole === 'USER') {
+      where.customerEmail = filters.userEmail;
+    } else if (filters.dealershipId) {
+      where.dealershipId = filters.dealershipId;
+    }
+
+    if (filters.status) {
+      where.status = filters.status;
+    }
+
+    if (filters.startDate && filters.endDate) {
+      where.startTime = {
+        gte: dayjs(filters.startDate).startOf('day').toDate(),
+        lte: dayjs(filters.endDate).endOf('day').toDate(),
+      };
+    } else if (filters.date) {
+      const dayStart = dayjs(filters.date).startOf('day');
+      const dayEnd = dayjs(filters.date).endOf('day');
+      where.startTime = {
+        gte: dayStart.toDate(),
+        lte: dayEnd.toDate(),
+      };
+    }
+
+    return prisma.appointment.findMany({
+      where,
+      include: {
+        dealership: true,
+        technician: true,
+        vehicle: true,
+      },
+      orderBy: {
+        startTime: 'desc',
+      },
+    });
+  }
+
   async createAppointment(input: CreateAppointmentInput) {
-    const duration = this.getDuration(input.serviceType);
-    const endTime = dayjs(input.startTime).add(duration, 'minute').toDate();
+    const startTime = dayjs(input.startTime);
+    const endTime = dayjs(input.endTime);
+    const dateStr = startTime.format('YYYY-MM-DD');
+
+    // Basic validation
+    if (startTime.isBefore(dayjs())) {
+      throw new AppError(400, 'Appointments must be booked for a future time');
+    }
+    if (endTime.isBefore(startTime) || endTime.isSame(startTime)) {
+      throw new AppError(400, 'End time must be after start time');
+    }
+    if (endTime.diff(startTime, 'hour', true) > 4) {
+      throw new AppError(400, 'Appointment duration cannot exceed 4 hours');
+    }
+
+    const slots = getSlotRange(input.startTime, input.endTime);
+    if (slots.length === 0) throw new AppError(400, 'Invalid time range');
 
     // Verify dealership exists
     const dealership = await prisma.dealership.findUnique({
@@ -110,48 +185,45 @@ export class AppointmentsService {
 
     if (!dealership) throw new AppError(404, 'Dealership not found');
 
-    // Get overlapping appointments that are not canceled
-    const overlapping = await prisma.appointment.findMany({
-      where: {
-        dealershipId: input.dealershipId,
-        startTime: { lt: endTime },
-        endTime: { gt: input.startTime },
-        status: { not: AppointmentStatus.CANCELED },
-      },
-    });
+    // Find available technician via Redis
+    const techId = await this.getAvailableResource(
+      input.dealershipId,
+      dateStr,
+      'tech',
+      dealership.technicians.map(t => t.id),
+      slots
+    );
 
-    // Find available technician
-    const usedTechIds = new Set(overlapping.map(a => a.technicianId));
-    const availableTech = dealership.technicians.find(t => !usedTechIds.has(t.id));
-
-    if (!availableTech) {
+    if (!techId) {
       throw new AppError(400, 'No technicians available for this time slot');
     }
 
-    let assignedVehicleId: string | null = null;
-    const requiresVehicle = true; // All our service types now require a vehicle slot
+    // Find available vehicle bay via Redis
+    const bayId = await this.getAvailableResource(
+      input.dealershipId,
+      dateStr,
+      'bay',
+      dealership.vehicles.map(v => v.id),
+      slots
+    );
 
-    if (requiresVehicle) {
-      const usedVehicleIds = new Set(overlapping.filter(a => a.vehicleId).map(a => a.vehicleId!));
-      const availableVehicle = dealership.vehicles.find(v => !usedVehicleIds.has(v.id));
-
-      if (!availableVehicle) {
-        throw new AppError(400, 'No vehicle slots available for this time slot');
-      }
-      assignedVehicleId = availableVehicle.id;
+    if (!bayId) {
+      throw new AppError(400, 'No vehicle slots (bays) available for this time slot');
     }
 
+    // Create appointment with PENDING status (requires manager approval)
     const appointment = await prisma.appointment.create({
       data: {
         serviceType: input.serviceType,
-        startTime: input.startTime,
-        endTime,
+        status: AppointmentStatus.PENDING,
+        startTime: startTime.toDate(),
+        endTime: endTime.toDate(),
         customerName: input.customerName,
         customerEmail: input.customerEmail,
         vehicleInfo: input.vehicleInfo,
         dealershipId: input.dealershipId,
-        technicianId: availableTech.id,
-        vehicleId: assignedVehicleId,
+        technicianId: techId,
+        vehicleId: bayId,
       },
       include: {
         technician: true,
@@ -160,7 +232,147 @@ export class AppointmentsService {
       },
     });
 
+    // Mark slots as busy in Redis
+    await this.markSlots(input.dealershipId, dateStr, 'tech', techId, slots, true);
+    await this.markSlots(input.dealershipId, dateStr, 'bay', bayId, slots, true);
+
+    // TODO: Send email to manager for approval
+    console.log(`Email request sent to manager for appointment ${appointment.id}`);
+
     return appointment;
+  }
+
+  async updateAppointment(id: string, data: { status?: AppointmentStatus; technicianId?: string }) {
+    const appointment = await prisma.appointment.findUnique({
+      where: { id },
+      include: { technician: true }
+    });
+    if (!appointment) throw new AppError(404, 'Appointment not found');
+
+    const dateStr = dayjs(appointment.startTime).format('YYYY-MM-DD');
+    const slots = getSlotRange(appointment.startTime, appointment.endTime);
+    const updateData: any = { ...data };
+
+    // Handle technician change
+    if (data.technicianId && data.technicianId !== appointment.technicianId) {
+      // 1. Verify new technician availability
+      const isAvailable = await this.getAvailableResource(
+        appointment.dealershipId,
+        dateStr,
+        'tech',
+        [data.technicianId],
+        slots
+      );
+      if (!isAvailable) {
+        throw new AppError(400, 'Selected technician is not available for this time slot');
+      }
+
+      // 2. Clear old technician slots in Redis
+      await this.markSlots(appointment.dealershipId, dateStr, 'tech', appointment.technicianId, slots, false);
+
+      // 3. Mark new technician slots in Redis
+      await this.markSlots(appointment.dealershipId, dateStr, 'tech', data.technicianId, slots, true);
+    }
+
+    // Handle status changes (releasing resources if CANCELED or REJECTED)
+    if (data.status && (data.status === AppointmentStatus.CANCELED || data.status === AppointmentStatus.REJECTED)) {
+      await this.markSlots(appointment.dealershipId, dateStr, 'tech', data.technicianId || appointment.technicianId, slots, false);
+      if (appointment.vehicleId) {
+        await this.markSlots(appointment.dealershipId, dateStr, 'bay', appointment.vehicleId, slots, false);
+      }
+    }
+
+    return prisma.appointment.update({
+      where: { id },
+      data: updateData,
+      include: {
+        technician: true,
+        dealership: true,
+        vehicle: true,
+      }
+    });
+  }
+
+  async checkAvailability(dealershipId: string, startTime: Date, endTime: Date): Promise<boolean> {
+    const start = dayjs(startTime);
+    const dateStr = start.format('YYYY-MM-DD');
+
+    const slots = getSlotRange(startTime, endTime);
+    if (slots.length === 0) return false;
+
+    const { isActive, techIds, bayIds } = await this.getResources(dealershipId);
+    if (!isActive) return false;
+
+    // Check technician availability
+    const techId = await this.getAvailableResource(
+      dealershipId,
+      dateStr,
+      'tech',
+      techIds,
+      slots
+    );
+    if (!techId) return false;
+
+    // Check bay availability
+    const bayId = await this.getAvailableResource(
+      dealershipId,
+      dateStr,
+      'bay',
+      bayIds,
+      slots
+    );
+
+
+    return !!bayId;
+  }
+
+  private async getResources(dealershipId: string): Promise<{ isActive: boolean; techIds: string[]; bayIds: string[] }> {
+    const activeKey = getRedisKey.dealerActive(dealershipId);
+    const techsKey = getRedisKey.dealerTechs(dealershipId);
+    const baysKey = getRedisKey.dealerBays(dealershipId);
+
+    const cachedActive = await redis.get(activeKey);
+
+    if (cachedActive !== null) {
+      if (cachedActive === 'false') return { isActive: false, techIds: [], bayIds: [] };
+
+      const [techIds, bayIds] = await Promise.all([
+        redis.smembers(techsKey),
+        redis.smembers(baysKey)
+      ]);
+
+      return { isActive: true, techIds, bayIds };
+    }
+
+    // Cache miss: sync from DB
+    const dealership = await prisma.dealership.findUnique({
+      where: { id: dealershipId },
+      include: {
+        technicians: { where: { isActive: true }, select: { id: true } },
+        vehicles: { select: { id: true } }
+      },
+    });
+
+    if (!dealership || !dealership.isActive) {
+      await redis.set(activeKey, 'false', 'EX', 3600); // 1 hour
+      return { isActive: false, techIds: [], bayIds: [] };
+    }
+
+    const techIds = dealership.technicians.map(t => t.id);
+    const bayIds = dealership.vehicles.map(v => v.id);
+
+    // Populate Redis
+    const pipeline = redis.pipeline();
+    pipeline.set(activeKey, 'true', 'EX', 3600);
+    pipeline.del(techsKey);
+    pipeline.del(baysKey);
+    if (techIds.length > 0) pipeline.sadd(techsKey, ...techIds);
+    if (bayIds.length > 0) pipeline.sadd(baysKey, ...bayIds);
+    pipeline.expire(techsKey, 3600);
+    pipeline.expire(baysKey, 3600);
+    await pipeline.exec();
+
+    return { isActive: true, techIds, bayIds };
   }
 
   async getDealershipSchedule(dealershipId: string, date: Date) {
@@ -184,9 +396,23 @@ export class AppointmentsService {
   }
 
   async cancelAppointment(id: string) {
-    return prisma.appointment.update({
+    const appointment = await prisma.appointment.findUnique({ where: { id } });
+    if (!appointment) throw new AppError(404, 'Appointment not found');
+
+    const dateStr = dayjs(appointment.startTime).format('YYYY-MM-DD');
+    const slots = getSlotRange(appointment.startTime, appointment.endTime);
+
+    const updated = await prisma.appointment.update({
       where: { id },
       data: { status: AppointmentStatus.CANCELED },
     });
+
+    // Clear slots in Redis
+    await this.markSlots(appointment.dealershipId, dateStr, 'tech', appointment.technicianId, slots, false);
+    if (appointment.vehicleId) {
+      await this.markSlots(appointment.dealershipId, dateStr, 'bay', appointment.vehicleId, slots, false);
+    }
+
+    return updated;
   }
 }

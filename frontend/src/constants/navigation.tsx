@@ -35,8 +35,7 @@ export const NAVIGATION_MENU_ITEMS = (user: User) => [
         to: '/appointments',
         icon: LayoutDashboard,
         active: location.pathname === '/appointments',
-        show: user?.role === Role.ADMIN || user?.role === Role.MANAGER,
-        disabled: true,
+        show: !!user,
     },
     {
         label: 'Schedule',

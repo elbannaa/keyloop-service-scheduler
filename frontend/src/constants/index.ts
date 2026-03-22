@@ -23,3 +23,7 @@ export const API_ROUTES = {
   DEALERSHIPS: '/dealerships',
   APPOINTMENTS: '/appointments',
 };
+
+export const DATE_TIME_DISPLAY_FORMAT = 'DD/MM/YYYY HH:mm';
+export const DATE_DISPLAY_FORMAT = 'DD/MM/YYYY';
+export const TIME_DISPLAY_FORMAT = 'HH:mm';

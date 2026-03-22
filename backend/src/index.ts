@@ -16,7 +16,7 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json());
-app.use(requestLogger);
+// app.use(requestLogger);
 
 // Health check
 app.get('/api/health', (_req, res) => {

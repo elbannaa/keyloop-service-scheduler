@@ -20,7 +20,7 @@ export interface Appointment {
   dealershipId: string;
   technicianId: string;
   vehicleId?: string;
-  status: 'SCHEDULED' | 'COMPLETED' | 'CANCELED';
+  status: 'PENDING' | 'SCHEDULED' | 'COMPLETED' | 'CANCELED' | 'REJECTED';
 }
 
 export interface TechnicianWithAppointments {
@@ -36,6 +36,7 @@ interface AppointmentsState {
   bookingLoading: boolean;
   lastBooking: Appointment | null;
   schedule: TechnicianWithAppointments[];
+  appointments: Appointment[];
 }
 
 const initialState: AppointmentsState = {
@@ -45,13 +46,14 @@ const initialState: AppointmentsState = {
   bookingLoading: false,
   lastBooking: null,
   schedule: [],
+  appointments: [],
 };
 
 export const fetchAvailability = createAsyncThunk(
   'appointments/fetchAvailability',
   async ({ dealershipId, serviceType, date }: { dealershipId: string; serviceType: ServiceTypeType; date: string }, { rejectWithValue }) => {
     try {
-      const response = await api.get(`/api/appointments/availability`, {
+      const response = await api.get(`/appointments/availability`, {
         params: { dealershipId, serviceType, date },
       });
       return response.data.data.slots;
@@ -63,9 +65,18 @@ export const fetchAvailability = createAsyncThunk(
 
 export const createAppointment = createAsyncThunk(
   'appointments/createAppointment',
-  async (data: any, { rejectWithValue }) => {
+  async (data: {
+    dealershipId: string;
+    serviceType: string;
+    startTime: string;
+    endTime: string;
+    customerName: string;
+    customerEmail: string;
+    vehicleInfo?: string;
+    vehicleId?: string;
+  }, { rejectWithValue }) => {
     try {
-      const response = await api.post(`/api/appointments`, data);
+      const response = await api.post(`/appointments`, data);
       return response.data.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Booking failed');
@@ -77,7 +88,7 @@ export const fetchSchedule = createAsyncThunk(
   'appointments/fetchSchedule',
   async ({ dealershipId, date }: { dealershipId: string; date: string }, { rejectWithValue }) => {
     try {
-      const response = await api.get(`/api/appointments/schedule`, {
+      const response = await api.get(`/appointments/schedule`, {
         params: { dealershipId, date },
       });
       return response.data.data;
@@ -91,10 +102,50 @@ export const cancelAppointment = createAsyncThunk(
   'appointments/cancelAppointment',
   async (id: string, { rejectWithValue }) => {
     try {
-      await api.patch(`/api/appointments/${id}/cancel`);
+      await api.patch(`/appointments/${id}/cancel`);
       return id;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to cancel appointment');
+    }
+  }
+);
+
+export const fetchAllAppointments = createAsyncThunk(
+  'appointments/fetchAllAppointments',
+  async (filters: { dealershipId?: string; status?: string; date?: string; startDate?: string; endDate?: string } | void, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/appointments`, {
+        params: filters || {},
+      });
+      return response.data.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch appointments');
+    }
+  }
+);
+
+export const updateAppointment = createAsyncThunk(
+  'appointments/updateAppointment',
+  async ({ id, data }: { id: string; data: any }, { rejectWithValue }) => {
+    try {
+      const response = await api.patch(`/appointments/${id}`, data);
+      return response.data.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to update appointment');
+    }
+  }
+);
+
+export const checkAvailability = createAsyncThunk(
+  'appointments/checkAvailability',
+  async ({ dealershipId, startTime, endTime }: { dealershipId: string; startTime: string; endTime: string }, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/appointments/check-availability`, {
+        params: { dealershipId, startTime, endTime },
+      });
+      return response.data.data.available;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to check availability');
     }
   }
 );
@@ -143,6 +194,42 @@ const appointmentsSlice = createSlice({
         state.schedule = action.payload;
       })
       .addCase(fetchSchedule.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(checkAvailability.pending, (state) => {
+        state.bookingLoading = true;
+        state.error = null;
+      })
+      .addCase(checkAvailability.fulfilled, (state) => {
+        state.bookingLoading = false;
+      })
+      .addCase(checkAvailability.rejected, (state, action) => {
+        state.bookingLoading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(fetchAllAppointments.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchAllAppointments.fulfilled, (state, action) => {
+        state.loading = false;
+        state.appointments = action.payload;
+      })
+      .addCase(fetchAllAppointments.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(updateAppointment.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(updateAppointment.fulfilled, (state, action) => {
+        state.loading = false;
+        state.appointments = state.appointments.map(app => 
+          app.id === action.payload.id ? action.payload : app
+        );
+      })
+      .addCase(updateAppointment.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })

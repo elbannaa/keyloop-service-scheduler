@@ -15,7 +15,8 @@ import {
   Col,
   theme,
   message,
-  Alert
+  Alert,
+  Tag
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -118,10 +119,7 @@ const UsersPage: React.FC = () => {
       dataIndex: 'role',
       key: 'role',
       render: (role) => (
-        <Badge
-          status={role === 'ADMIN' ? 'processing' : 'default'}
-          text={<Text style={{ fontSize: 13 }}>{role.charAt(0).toUpperCase() + role.slice(1).toLowerCase()}</Text>}
-        />
+        <Tag variant="outlined" color={role === 'ADMIN' ? 'processing' : 'default'}>{role.charAt(0).toUpperCase() + role.slice(1).toLowerCase()}</Tag>
       ),
     },
     {
@@ -129,10 +127,7 @@ const UsersPage: React.FC = () => {
       dataIndex: 'isActive',
       key: 'isActive',
       render: (isActive) => (
-        <Badge
-          color={isActive ? token.colorPrimary : token.colorError}
-          text={<Text style={{ fontSize: 13 }}>{isActive ? 'Active' : 'Inactive'}</Text>}
-        />
+        <Tag variant="outlined" color={isActive ? 'success' : 'error'}>{isActive ? 'Active' : 'Inactive'}</Tag>
       ),
     },
     {

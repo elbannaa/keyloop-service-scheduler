@@ -3,18 +3,19 @@ import { useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchDealerships, fetchVehicles } from '@/store/dealershipsSlice';
 import {
-  fetchAvailability,
   createAppointment,
-  ServiceType,
-  type ServiceTypeType,
-  clearBookingState
+  clearBookingState,
+  checkAvailability
 } from '@/store/appointmentsSlice';
+import {
+  SERVICE_TYPE,
+  SERVICE_TYPE_LABELS,
+} from '@/constants/business';
 import {
   Card,
   Button,
   Input,
   Select,
-  Table,
   Badge,
   Steps,
   Typography,
@@ -22,65 +23,72 @@ import {
   Row,
   Col,
   DatePicker,
+  TimePicker,
   Result,
   theme,
-  Empty,
   message,
   Alert
 } from 'antd';
 import {
-  ClockCircleOutlined,
   UserOutlined,
   CheckCircleOutlined,
   RightOutlined,
-  BuildOutlined,
   InfoCircleOutlined,
   CarOutlined,
   MailOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import type { ColumnsType } from 'antd/es/table';
-import type { DealershipData as Dealership } from '@/store/dealershipsSlice';
+import { DATE_TIME_DISPLAY_FORMAT } from '@/constants';
 
-const { Title, Text, Paragraph } = Typography;
-const { Option } = Select;
+const { Title, Text } = Typography;
 
 const BookingPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const location = useLocation();
-  const { data: dealerships } = useAppSelector((state) => state.dealerships);
-  const { availableSlots, loading: slotsLoading, bookingLoading, lastBooking, error } = useAppSelector((state) => state.appointments);
+  const { data: dealerships, vehicles } = useAppSelector((state) => state.dealerships);
+  const { bookingLoading, lastBooking, error } = useAppSelector((state) => state.appointments);
+  const { user } = useAppSelector((state) => state.auth);
   const { token } = theme.useToken();
 
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<{
-    serviceType: ServiceTypeType | '';
-    date: string | undefined;
+    serviceType: string;
+    startTime: string | undefined;
+    endTime: string | undefined;
     customerName: string;
     customerEmail: string;
     vehicleInfo: string;
     vehicleId?: string;
   }>({
-    serviceType: '' as ServiceTypeType | '',
-    date: dayjs().format('YYYY-MM-DD'),
+    serviceType: '',
+    startTime: undefined,
+    endTime: undefined,
     customerName: '',
     customerEmail: '',
     vehicleInfo: '',
     vehicleId: undefined,
   });
 
+  const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs | null>(null);
+  const [startTimeOnly, setStartTimeOnly] = useState<dayjs.Dayjs | null>(null);
+  const [endTimeOnly, setEndTimeOnly] = useState<dayjs.Dayjs | null>(null);
   const [selectedDealershipId, setSelectedDealershipId] = useState<string | null>(null);
-  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
 
   useEffect(() => {
     dispatch(fetchDealerships());
 
-    // Pre-populate if coming from DealershipsPage
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        customerName: user.name,
+        customerEmail: user.email,
+      }));
+    }
+
     if (location.state?.dealershipId) {
       setSelectedDealershipId(location.state.dealershipId);
-      setCurrentStep(0); // Ensure we are on first step or skip to first step with dealership selected
     }
-  }, [dispatch, location.state]);
+  }, [dispatch, location.state, user]);
 
   useEffect(() => {
     if (selectedDealershipId) {
@@ -88,33 +96,47 @@ const BookingPage: React.FC = () => {
     }
   }, [selectedDealershipId, dispatch]);
 
-  const handleCheckAvailability = () => {
-    if (selectedDealershipId && formData.serviceType && formData.date) {
-      dispatch(fetchAvailability({
-        dealershipId: selectedDealershipId,
-        serviceType: formData.serviceType as ServiceTypeType,
-        date: formData.date
-      }));
-      setSelectedSlot(null);
-    }
-  };
+  const isValidOrder = formData.startTime && formData.endTime ? dayjs(formData.endTime).isAfter(dayjs(formData.startTime)) : true;
+  const isValidDuration = formData.startTime && formData.endTime ? dayjs(formData.endTime).diff(dayjs(formData.startTime), 'hour', true) <= 4 : true;
+  const isFutureTime = formData.startTime ? dayjs(formData.startTime).isAfter(dayjs()) : true;
 
   const handleBooking = async () => {
-    if (!selectedDealershipId || !formData.serviceType || !selectedSlot) return;
+    if (!selectedDealershipId || !formData.serviceType) return;
 
     try {
       await dispatch(createAppointment({
         dealershipId: selectedDealershipId,
         serviceType: formData.serviceType,
-        startTime: selectedSlot,
+        startTime: formData.startTime!,
+        endTime: formData.endTime!,
         customerName: formData.customerName,
         customerEmail: formData.customerEmail,
         vehicleInfo: formData.vehicleInfo,
         vehicleId: formData.vehicleId,
       })).unwrap();
-      setCurrentStep(3);
+      setCurrentStep(2); // Success step
     } catch (err: any) {
       message.error(err || 'Failed to create appointment');
+    }
+  };
+
+  const handleContinue = async () => {
+    if (!selectedDealershipId || !formData.startTime || !formData.endTime) return;
+
+    try {
+      const isAvailable = await dispatch(checkAvailability({
+        dealershipId: selectedDealershipId,
+        startTime: formData.startTime,
+        endTime: formData.endTime,
+      })).unwrap();
+
+      if (isAvailable) {
+        setCurrentStep(1);
+      } else {
+        message.warning('The selected time slot is no longer available. Please choose another time.');
+      }
+    } catch (err: any) {
+      message.error(err || 'Failed to check availability');
     }
   };
 
@@ -122,54 +144,22 @@ const BookingPage: React.FC = () => {
     setCurrentStep(0);
     setFormData({
       serviceType: '',
-      date: dayjs().format('YYYY-MM-DD'),
-      customerName: '',
-      customerEmail: '',
+      startTime: undefined,
+      endTime: undefined,
+      customerName: user?.name || '',
+      customerEmail: user?.email || '',
       vehicleInfo: '',
+      vehicleId: undefined,
     });
     setSelectedDealershipId(null);
-    setSelectedSlot(null);
+    setSelectedDate(null);
+    setStartTimeOnly(null);
+    setEndTimeOnly(null);
     dispatch(clearBookingState());
   };
 
-  const getServiceLabel = (type: ServiceTypeType) => {
-    switch (type) {
-      case ServiceType.NEW_CAR_CONSULTATION: return 'New Car Consultation';
-      case ServiceType.VEHICLE_REPAIR: return 'Vehicle Repair';
-      case ServiceType.VEHICLE_MAINTENANCE: return 'Vehicle Maintenance';
-      default: return '';
-    }
-  };
-
-  const columns: ColumnsType<Dealership> = [
-    {
-      title: 'Dealership',
-      key: 'dealership',
-      render: (_, record) => (
-        <Space orientation="vertical" size={0}>
-          <Text strong>{record.name}</Text>
-          <Text type="secondary" style={{ fontSize: 12 }}>{record.address}</Text>
-        </Space>
-      ),
-    },
-    {
-      title: 'Action',
-      key: 'action',
-      align: 'right',
-      render: (_, record) => (
-        <Button
-          type={selectedDealershipId === record.id ? 'primary' : 'default'}
-          onClick={() => setSelectedDealershipId(record.id)}
-        >
-          {selectedDealershipId === record.id ? 'Selected' : 'Select'}
-        </Button>
-      ),
-    },
-  ];
-
   const steps = [
     { title: 'Details', icon: <InfoCircleOutlined /> },
-    { title: 'Location', icon: <BuildOutlined /> },
     { title: 'Confirm', icon: <CheckCircleOutlined /> },
   ];
 
@@ -178,60 +168,103 @@ const BookingPage: React.FC = () => {
       <Space orientation="vertical" size={token.paddingLG} style={{ width: '100%' }}>
         <div>
           <Title level={2} style={{ marginBottom: token.paddingXS, fontWeight: 800 }}>Book a Service</Title>
-          <Text type="secondary">Find a dealership and schedule your appointment in minutes.</Text>
+          <Text type="secondary">Follow the steps below to schedule your appointment.</Text>
         </div>
 
-        {currentStep < 3 && (
+        {currentStep < 2 && (
           <div style={{ maxWidth: 800, margin: '0 auto', width: '100%' }}>
             <Steps
               size="small"
               current={currentStep}
               items={steps}
-              style={{ marginBottom: token.paddingXL }}
             />
           </div>
         )}
 
-        <Row gutter={[token.paddingLG, token.paddingLG]}>
-          <Col xs={24} lg={currentStep === 3 ? 24 : 16}>
+        <Row justify="center">
+          <Col xs={24} lg={20} xl={16}>
             {currentStep === 0 && (
               <Card
-                title={<Space><InfoCircleOutlined /> Appointment Details</Space>}
                 bordered={false}
-                style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.05)', borderRadius: token.borderRadiusLG }}
+                styles={{ header: { backgroundColor: token.colorPrimaryBg, borderBottom: `1px solid ${token.colorPrimaryBorder}` } }}
+                title={<Title level={4} style={{ margin: 0 }}>Appointment Details</Title>}
+                style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.1)', borderRadius: token.borderRadiusLG, overflow: 'hidden' }}
               >
-                <Space orientation="vertical" size={token.paddingMD} style={{ width: '100%' }}>
+                <Space orientation="vertical" size={token.paddingLG} style={{ width: '100%' }}>
                   <Row gutter={token.paddingMD}>
                     <Col span={12}>
                       <Space orientation="vertical" size={4} style={{ width: '100%' }}>
-                        <Text strong style={{ fontSize: 12 }}>Service Type</Text>
-                        <Select
-                          style={{ width: '100%' }}
-                          placeholder="Select type..."
-                          value={formData.serviceType || undefined}
-                          onChange={(val) => setFormData({ ...formData, serviceType: val })}
-                        >
-                          {selectedDealershipId ? (
-                            dealerships.find(d => d.id === selectedDealershipId)?.supportedServices.map(s => (
-                              <Option key={s} value={s}>{getServiceLabel(s as ServiceTypeType)}</Option>
-                            ))
-                          ) : (
-                            <>
-                              <Option value={ServiceType.NEW_CAR_CONSULTATION}>New Car Consultation</Option>
-                              <Option value={ServiceType.VEHICLE_REPAIR} >Vehicle Repair</Option>
-                              <Option value={ServiceType.VEHICLE_MAINTENANCE}>Vehicle Maintenance</Option>
-                            </>
-                          )}
-                        </Select>
+                        <Text strong style={{ fontSize: 12 }}>Full Name</Text>
+                        <Input
+                          prefix={<UserOutlined style={{ color: token.colorTextPlaceholder }} />}
+                          disabled
+                          value={formData.customerName}
+                        />
                       </Space>
                     </Col>
                     <Col span={12}>
                       <Space orientation="vertical" size={4} style={{ width: '100%' }}>
-                        <Text strong style={{ fontSize: 12 }}>Preferred Date</Text>
+                        <Text strong style={{ fontSize: 12 }}>Email Address</Text>
+                        <Input
+                          prefix={<MailOutlined style={{ color: token.colorTextPlaceholder }} />}
+                          disabled
+                          value={formData.customerEmail}
+                        />
+                      </Space>
+                    </Col>
+                  </Row>
+
+                  <Space orientation="vertical" size={4} style={{ width: '100%' }}>
+                    <Text strong style={{ fontSize: 12 }}>Dealership</Text>
+                    <Select
+                      showSearch
+                      placeholder="Search and select a dealership"
+                      style={{ width: '100%' }}
+                      optionFilterProp="label"
+                      value={selectedDealershipId}
+                      onChange={(val) => {
+                        setSelectedDealershipId(val);
+                        setFormData(prev => ({ ...prev, vehicleId: undefined }));
+                      }}
+                      options={dealerships.map(d => ({
+                        value: d.id,
+                        label: d.name,
+                      }))}
+                    />
+                  </Space>
+
+                  <Space orientation="vertical" size={4} style={{ width: '100%' }}>
+                    <Text strong style={{ fontSize: 12 }}>What service do you need?</Text>
+                    <Select
+                      style={{ width: '100%' }}
+                      placeholder="Please select a service type..."
+                      value={formData.serviceType || undefined}
+                      onChange={(val) => setFormData({ ...formData, serviceType: val })}
+                      options={Object.values(SERVICE_TYPE).map(type => ({
+                        value: type,
+                        label: SERVICE_TYPE_LABELS[type as keyof typeof SERVICE_TYPE_LABELS],
+                      }))}
+                    />
+                  </Space>
+
+                  <Row gutter={token.paddingMD}>
+                    <Col span={24}>
+                      <Space orientation="vertical" size={4} style={{ width: '100%' }}>
+                        <Text strong style={{ fontSize: 12 }}>Booking Date</Text>
                         <DatePicker
                           style={{ width: '100%' }}
-                          value={formData.date ? dayjs(formData.date) : null}
-                          onChange={(date) => setFormData({ ...formData, date: date?.format('YYYY-MM-DD') })}
+                          placeholder="Select appointment date"
+                          value={selectedDate}
+                          onChange={(date) => {
+                            setSelectedDate(date);
+                            if (date) {
+                              const newStart = date.hour(startTimeOnly?.hour() || 8).minute(startTimeOnly?.minute() || 0).second(0).millisecond(0).toISOString();
+                              const newEnd = date.hour(endTimeOnly?.hour() || 9).minute(endTimeOnly?.minute() || 0).second(0).millisecond(0).toISOString();
+                              setFormData({ ...formData, startTime: newStart, endTime: newEnd });
+                            } else {
+                              setFormData({ ...formData, startTime: undefined, endTime: undefined });
+                            }
+                          }}
                           disabledDate={(current) => current && current < dayjs().startOf('day')}
                         />
                       </Space>
@@ -241,61 +274,89 @@ const BookingPage: React.FC = () => {
                   <Row gutter={token.paddingMD}>
                     <Col span={12}>
                       <Space orientation="vertical" size={4} style={{ width: '100%' }}>
-                        <Text strong style={{ fontSize: 12 }}>Full Name</Text>
-                        <Input
-                          prefix={<UserOutlined style={{ color: token.colorTextPlaceholder }} />}
-                          placeholder="John Doe"
-                          value={formData.customerName}
-                          onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                        <Text strong style={{ fontSize: 12 }}>Start Time</Text>
+                        <TimePicker
+                          style={{ width: '100%', borderColor: !isFutureTime ? token.colorError : undefined }}
+                          format="HH:mm"
+                          minuteStep={15}
+                          value={startTimeOnly}
+                          onChange={(time) => {
+                            setStartTimeOnly(time);
+                            if (time && selectedDate) {
+                              const newStart = selectedDate.hour(time.hour()).minute(time.minute()).second(0).millisecond(0).toISOString();
+                              setFormData({ ...formData, startTime: newStart });
+                            } else {
+                              setFormData({ ...formData, startTime: undefined });
+                            }
+                          }}
                         />
+                        {!isFutureTime && <Text type="danger" style={{ fontSize: 11 }}>Time must be in the future</Text>}
                       </Space>
                     </Col>
                     <Col span={12}>
                       <Space orientation="vertical" size={4} style={{ width: '100%' }}>
-                        <Text strong style={{ fontSize: 12 }}>Email Address</Text>
-                        <Input
-                          prefix={<MailOutlined style={{ color: token.colorTextPlaceholder }} />}
-                          type="email"
-                          placeholder="john@example.com"
-                          value={formData.customerEmail}
-                          onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
+                        <Text strong style={{ fontSize: 12 }}>End Time</Text>
+                        <TimePicker
+                          style={{ width: '100%', borderColor: (!isValidOrder || !isValidDuration) ? token.colorError : undefined }}
+                          format="HH:mm"
+                          minuteStep={15}
+                          value={endTimeOnly}
+                          onChange={(time) => {
+                            setEndTimeOnly(time);
+                            if (time && selectedDate) {
+                              const newEnd = selectedDate.hour(time.hour()).minute(time.minute()).second(0).millisecond(0).toISOString();
+                              setFormData({ ...formData, endTime: newEnd });
+                            } else {
+                              setFormData({ ...formData, endTime: undefined });
+                            }
+                          }}
                         />
+                        {!isValidOrder && <Text type="danger" style={{ fontSize: 11 }}>Must be after start time</Text>}
+                        {isValidOrder && !isValidDuration && <Text type="danger" style={{ fontSize: 11 }}>Duration cannot exceed 4h</Text>}
                       </Space>
                     </Col>
                   </Row>
 
                   <Space orientation="vertical" size={4} style={{ width: '100%' }}>
-                    <Text strong style={{ fontSize: 12 }}>Vehicle Info / Notes</Text>
+                    <Text strong style={{ fontSize: 12 }}>Vehicle (Optional)</Text>
+                    <Select
+                      style={{ width: '100%' }}
+                      placeholder={selectedDealershipId ? "Select a vehicle..." : "Please select a dealership first"}
+                      allowClear
+                      disabled={!selectedDealershipId}
+                      value={formData.vehicleId}
+                      onChange={(val) => setFormData({ ...formData, vehicleId: val })}
+                      options={vehicles.map(v => ({
+                        value: v.id,
+                        label: `${v.year} ${v.make} ${v.model}`,
+                      }))}
+                    />
+                  </Space>
+
+                  <Space orientation="vertical" size={4} style={{ width: '100%' }}>
+                    <Text strong style={{ fontSize: 12 }}>Notes</Text>
                     <Input
                       prefix={<CarOutlined style={{ color: token.colorTextPlaceholder }} />}
-                      placeholder="e.g. 2022 Toyota Camry - Oil Change"
+                      placeholder="e.g. Oil change requirement, special requests..."
                       value={formData.vehicleInfo}
                       onChange={(e) => setFormData({ ...formData, vehicleInfo: e.target.value })}
                     />
                   </Space>
 
-                  {(formData.serviceType === ServiceType.VEHICLE_REPAIR || formData.serviceType === ServiceType.VEHICLE_MAINTENANCE) && (
-                    <Space orientation="vertical" size={4} style={{ width: '100%' }}>
-                      <Text strong style={{ fontSize: 12 }}>Target Vehicle (Optional)</Text>
-                      <Select
-                        style={{ width: '100%' }}
-                        placeholder="Select a vehicle if available in our system..."
-                        allowClear
-                        value={formData.vehicleId}
-                        onChange={(val) => setFormData({ ...formData, vehicleId: val })}
-                      >
-                        {useAppSelector(state => state.dealerships.vehicles).map(v => (
-                          <Option key={v.id} value={v.id}>{v.year} {v.make} {v.model}</Option>
-                        ))}
-                      </Select>
-                    </Space>
-                  )}
-
                   <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: token.paddingXS }}>
                     <Button
                       type="primary"
-                      onClick={() => setCurrentStep(1)}
-                      disabled={!formData.serviceType || !formData.customerName || !formData.customerEmail}
+                      onClick={handleContinue}
+                      loading={bookingLoading}
+                      disabled={
+                        !formData.serviceType ||
+                        !selectedDealershipId ||
+                        !formData.startTime ||
+                        !formData.endTime ||
+                        !isFutureTime ||
+                        !isValidOrder ||
+                        !isValidDuration
+                      }
                       icon={<RightOutlined />}
                       iconPlacement="end"
                     >
@@ -307,93 +368,6 @@ const BookingPage: React.FC = () => {
             )}
 
             {currentStep === 1 && (
-              <Space orientation="vertical" size={token.paddingLG} style={{ width: '100%' }}>
-                <Card
-                  title={<Space><BuildOutlined /> Select Dealership</Space>}
-                  bordered={false}
-                  styles={{ body: { padding: 0 } }}
-                  style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.05)', borderRadius: token.borderRadiusLG, overflow: 'hidden' }}
-                >
-                  <Table
-                    columns={columns}
-                    dataSource={dealerships}
-                    rowKey="id"
-                    pagination={false}
-                    locale={{ emptyText: <Empty description="No active dealerships found." /> }}
-                    onRow={(record) => ({
-                      onClick: () => setSelectedDealershipId(record.id),
-                      style: { cursor: 'pointer', backgroundColor: selectedDealershipId === record.id ? token.colorPrimaryBg : undefined }
-                    })}
-                  />
-                </Card>
-
-                {selectedDealershipId && (
-                  <Card
-                    title={<Space><ClockCircleOutlined /> Pick a Time Slot</Space>}
-                    bordered={false}
-                    style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.05)', borderRadius: token.borderRadiusLG }}
-                  >
-                    {slotsLoading ? (
-                      <div style={{ padding: '40px 0', textAlign: 'center' }}>
-                        <Text type="secondary">Loading available times...</Text>
-                      </div>
-                    ) : availableSlots.length === 0 ? (
-                      <Alert
-                        message="No slots available"
-                        description="Please try another date or location."
-                        type="warning"
-                        showIcon
-                      />
-                    ) : (
-                      <>
-                        <div style={{ marginBottom: token.paddingMD, display: 'flex', justifyContent: 'center' }}>
-                          <Button
-                            onClick={handleCheckAvailability}
-                            loading={slotsLoading}
-                            type="dashed"
-                          >
-                            Check Available Slots
-                          </Button>
-                        </div>
-                        {availableSlots.length > 0 && (
-                          <Row gutter={[token.paddingSM, token.paddingSM]}>
-                            {availableSlots.map((slot) => (
-                              <Col key={slot} xs={8} sm={6} md={4}>
-                                <Button
-                                  block
-                                  type={selectedSlot === slot ? 'primary' : 'default'}
-                                  onClick={() => setSelectedSlot(slot)}
-                                >
-                                  {dayjs(slot).format('HH:mm')}
-                                </Button>
-                              </Col>
-                            ))}
-                          </Row>
-                        )}
-                        {availableSlots.length === 0 && !slotsLoading && (
-                          <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                            <Text type="secondary">Click check button to see availability</Text>
-                          </div>
-                        )}
-                      </>
-                    )}
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 32, borderTop: `1px solid ${token.colorBorderSecondary}`, paddingTop: token.paddingLG }}>
-                      <Button onClick={() => setCurrentStep(0)}>Back</Button>
-                      <Button
-                        type="primary"
-                        disabled={!selectedSlot || slotsLoading}
-                        onClick={() => setCurrentStep(2)}
-                      >
-                        Next Step
-                      </Button>
-                    </div>
-                  </Card>
-                )}
-              </Space>
-            )}
-
-            {currentStep === 2 && (
               <Card
                 bordered={false}
                 styles={{ header: { backgroundColor: token.colorPrimaryBg, borderBottom: `1px solid ${token.colorPrimaryBorder}` } }}
@@ -418,8 +392,10 @@ const BookingPage: React.FC = () => {
                       <div>
                         <Text type="secondary" strong style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Schedule</Text>
                         <div style={{ marginTop: token.paddingXS }}>
-                          <Title level={5} style={{ margin: 0 }}>{dayjs(selectedSlot!).format('dddd, MMMM D, YYYY')}</Title>
-                          <Title level={4} style={{ margin: 0, color: token.colorPrimary }}>{dayjs(selectedSlot!).format('h:mm A')}</Title>
+                          <Title level={5} style={{ margin: 0 }}>{dayjs(formData.startTime).format('dddd, MMMM D, YYYY')}</Title>
+                          <Title level={4} style={{ margin: 0, color: token.colorPrimary }}>
+                            {dayjs(formData.startTime).format('h:mm A')} - {dayjs(formData.endTime).format('h:mm A')}
+                          </Title>
                         </div>
                       </div>
                     </Space>
@@ -432,7 +408,7 @@ const BookingPage: React.FC = () => {
                         <div style={{ marginTop: token.paddingXS }}>
                           <Badge
                             color={token.colorPrimary}
-                            text={<Text strong>{getServiceLabel(formData.serviceType as ServiceTypeType)}</Text>}
+                            text={<Text strong>{SERVICE_TYPE_LABELS[formData.serviceType as keyof typeof SERVICE_TYPE_LABELS]}</Text>}
                             style={{ marginBottom: token.paddingXS }}
                           />
                           <br />
@@ -456,7 +432,7 @@ const BookingPage: React.FC = () => {
                 )}
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 40, borderTop: `1px solid ${token.colorBorderSecondary}`, paddingTop: token.paddingLG }}>
-                  <Button onClick={() => setCurrentStep(1)}>Back</Button>
+                  <Button onClick={() => setCurrentStep(0)}>Back</Button>
                   <Button
                     type="primary"
                     loading={bookingLoading}
@@ -469,7 +445,7 @@ const BookingPage: React.FC = () => {
               </Card>
             )}
 
-            {currentStep === 3 && lastBooking && (
+            {currentStep === 2 && lastBooking && (
               <Result
                 status="success"
                 title={<Title level={2}>Success!</Title>}
@@ -488,16 +464,18 @@ const BookingPage: React.FC = () => {
                     </div>
                     <Space orientation="vertical" size={token.paddingSM} style={{ width: '100%' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Text type="secondary" style={{ fontSize: 13 }}>Technician</Text>
-                        <Text strong style={{ fontSize: 13 }}>Assigned Automatically</Text>
+                        <Text type="secondary" style={{ fontSize: 13 }}>Dealership</Text>
+                        <Text strong style={{ fontSize: 13 }}>{dealerships.find(d => d.id === lastBooking.dealershipId)?.name}</Text>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <Text type="secondary" style={{ fontSize: 13 }}>Date</Text>
-                        <Text strong style={{ fontSize: 13 }}>{dayjs(lastBooking.startTime).format('MMM D, YYYY')}</Text>
+                        <Text strong style={{ fontSize: 13 }}>{dayjs(lastBooking.startTime).format(DATE_TIME_DISPLAY_FORMAT)}</Text>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <Text type="secondary" style={{ fontSize: 13 }}>Time</Text>
-                        <Text strong style={{ fontSize: 13, color: token.colorPrimary }}>{dayjs(lastBooking.startTime).format('h:mm A')}</Text>
+                        <Text strong style={{ fontSize: 13, color: token.colorPrimary }}>
+                          {dayjs(lastBooking.startTime).format('h:mm A')} - {dayjs(lastBooking.endTime).format('h:mm A')}
+                        </Text>
                       </div>
                     </Space>
                   </Card>
@@ -505,46 +483,6 @@ const BookingPage: React.FC = () => {
               </Result>
             )}
           </Col>
-
-          {currentStep < 3 && (
-            <Col xs={24} lg={8}>
-              <Space orientation="vertical" size={token.paddingLG} style={{ width: '100%' }}>
-                <Card title={<Text strong type="secondary" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Need Assistance?</Text>} bordered={false}>
-                  <Space orientation="vertical" size={token.paddingMD}>
-                    <div>
-                      <Text strong style={{ fontSize: 13 }}>Service Types</Text>
-                      <Paragraph type="secondary" style={{ fontSize: 12, marginTop: 4 }}>
-                        We offer three distinct service types tailored to your needs, from simple consultations to full vehicle maintenance.
-                      </Paragraph>
-                    </div>
-                    <div>
-                      <Text strong style={{ fontSize: 13 }}>Dynamic Scheduling</Text>
-                      <Paragraph type="secondary" style={{ fontSize: 12, marginTop: 4 }}>
-                        Our system automatically finds the best technician for your request based on real-time availability.
-                      </Paragraph>
-                    </div>
-                    <div style={{ borderTop: `1px solid ${token.colorBorderSecondary}`, paddingTop: token.paddingMD }}>
-                      <Text type="secondary" style={{ fontSize: 10 }}>Keyloop Unified Scheduler v1.0</Text>
-                    </div>
-                  </Space>
-                </Card>
-
-                {currentStep < 2 && (
-                  <Card bordered={false} style={{ backgroundColor: token.colorPrimaryBg, border: `1px solid ${token.colorPrimaryBorder}` }}>
-                    <Space align="start">
-                      <InfoCircleOutlined style={{ color: token.colorPrimary, marginTop: 4 }} />
-                      <div>
-                        <Text strong style={{ fontSize: 13 }}>Quick Tip</Text>
-                        <Paragraph type="secondary" style={{ fontSize: 12, marginTop: 4, fontStyle: 'italic' }}>
-                          You can book for any day between 8:00 AM and 6:00 PM. Weekends may have limited availability.
-                        </Paragraph>
-                      </div>
-                    </Space>
-                  </Card>
-                )}
-              </Space>
-            </Col>
-          )}
         </Row>
       </Space>
     </div>

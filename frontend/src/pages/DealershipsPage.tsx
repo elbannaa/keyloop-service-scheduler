@@ -5,7 +5,6 @@ import {
   Table,
   Input,
   Button,
-  Badge,
   Dropdown,
   Typography,
   Space,
@@ -143,13 +142,14 @@ const DealershipsPage: React.FC = () => {
             style={{ width: '100%' }}
             value={editForm.supportedServices}
             onChange={(val: string[]) => setEditForm({ ...editForm, supportedServices: val })}
-          >
-            <Select.Option value="NEW_CAR_CONSULTATION">New Car Consultation</Select.Option>
-            <Select.Option value="VEHICLE_REPAIR">Vehicle Repair</Select.Option>
-            <Select.Option value="VEHICLE_MAINTENANCE">Vehicle Maintenance</Select.Option>
-          </Select>
+            options={[
+              { value: 'NEW_CAR_CONSULTATION', label: 'New Car Consultation' },
+              { value: 'VEHICLE_REPAIR', label: 'Vehicle Repair' },
+              { value: 'VEHICLE_MAINTENANCE', label: 'Vehicle Maintenance' },
+            ]}
+          />
         ) : (
-          <Space size={[0, 4]} wrap>
+          <Space size={[0, 4]} wrap orientation='vertical'>
             {d.supportedServices?.map((s: string) => (
               <Tag key={s} color="blue" style={{ fontSize: 10 }}>
                 {s.replace(/_/g, ' ')}
@@ -164,11 +164,7 @@ const DealershipsPage: React.FC = () => {
       dataIndex: 'isActive',
       key: 'status',
       render: (isActive: boolean) => (
-        <Badge
-          status={isActive ? 'success' : 'error'}
-          text={isActive ? 'Active' : 'Inactive'}
-          style={{ fontSize: 12 }}
-        />
+        <Tag variant="outlined" color={isActive ? 'success' : 'error'}>{isActive ? 'Active' : 'Inactive'}</Tag>
       ),
     },
     {
@@ -293,7 +289,7 @@ const DealershipsPage: React.FC = () => {
       <Row gutter={[token.paddingMD, token.paddingMD]} align="middle" justify="space-between">
         <Col xs={24} sm={12} md={8}>
           <Input
-            placeholder="Search dealerships..."
+            placeholder="Search dealerships by name or location"
             prefix={<SearchOutlined style={{ color: token.colorTextPlaceholder }} />}
             value={search}
             onChange={(e) => setSearch(e.target.value)}

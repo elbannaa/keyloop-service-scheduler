@@ -28,7 +28,7 @@ export const Sidebar: React.FC<{
       key: item.to,
       icon: React.createElement(item.icon, { size: 18 }),
       label: item.label,
-      disabled: item.disabled,
+      disabled: (item as any).disabled,
       onClick: () => navigate(item.to),
     }));
 
