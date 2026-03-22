@@ -8,6 +8,7 @@ import DealershipsPage from '@/pages/DealershipsPage';
 import BookingPage from '@/pages/BookingPage';
 import SchedulePage from '@/pages/SchedulePage';
 import AppointmentsPage from '@/pages/AppointmentsPage';
+import UnauthorizedPage from '@/pages/UnauthorizedPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 import { ProtectedRoute } from '@/components/shared';
 
@@ -62,6 +63,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <UsersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/unauthorized"
+            element={
+              <ProtectedRoute>
+                <UnauthorizedPage />
               </ProtectedRoute>
             }
           />

@@ -5,6 +5,7 @@ import { fetchCurrentUser } from '@/store/authSlice';
 import { Spin, Typography, theme } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
 import { AppLayout } from '@/components/layout';
+import { canAccessPath } from '@/constants/navigation';
 
 const { Text } = Typography;
 
@@ -28,7 +29,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (loading) {
+  if (loading || (token && !user)) {
     const antIcon = <LoadingOutlined style={{ fontSize: 48 }} spin />;
     return (
       <main style={{ 
@@ -51,6 +52,15 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
           Loading your profile...
         </Text>
       </main>
+    );
+  }
+
+  // Check permissions IF user is loaded
+  if (user && !canAccessPath(user, location.pathname)) {
+    return (
+      <AppLayout>
+        <Navigate to="/unauthorized" replace />
+      </AppLayout>
     );
   }
 
