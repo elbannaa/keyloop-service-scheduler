@@ -4,16 +4,19 @@ import { config } from './config';
 import { requestLogger } from './middleware/logger';
 import { errorHandler } from './middleware/errorHandler';
 import authRoutes from './modules/auth/auth.routes';
+import usersRoutes from './modules/users/users.routes';
+import dealershipsRoutes from './modules/dealerships/dealerships.routes';
+import appointmentsRoutes from './modules/appointments/appointments.routes';
 
 const app = express();
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  origin: [config.frontendUrl],
   credentials: true,
 }));
 app.use(express.json());
-app.use(requestLogger);
+// app.use(requestLogger);
 
 // Health check
 app.get('/api/health', (_req, res) => {
@@ -22,6 +25,9 @@ app.get('/api/health', (_req, res) => {
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/dealerships', dealershipsRoutes);
+app.use('/api/appointments', appointmentsRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);

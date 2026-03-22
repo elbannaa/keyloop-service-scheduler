@@ -12,6 +12,15 @@ export interface AuthRequest extends Request {
   };
 }
 
+export const requireRole = (...roles: string[]) =>
+  (req: AuthRequest, res: Response, next: NextFunction): void => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      res.status(403).json({ error: 'Forbidden', message: 'Insufficient permissions' });
+      return;
+    }
+    next();
+  };
+
 export const authGuard = async (
   req: AuthRequest,
   res: Response,
@@ -47,6 +56,11 @@ export const authGuard = async (
 
     if (!user) {
       res.status(401).json({ error: 'Unauthorized', message: 'User not found' });
+      return;
+    }
+
+    if (!user.isActive) {
+      res.status(401).json({ error: 'Unauthorized', message: 'Account is deactivated' });
       return;
     }
 

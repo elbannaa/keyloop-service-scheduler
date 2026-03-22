@@ -1,12 +1,12 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '@/lib/axios';
+import { type RoleType } from '@/constants/role';
 
-interface User {
+export interface User {
   id: string;
   email: string;
   name: string;
-  phone: string | null;
-  role: 'USER' | 'ADMIN';
+  role: RoleType;
   createdAt: string;
   updatedAt: string;
 }
@@ -29,13 +29,13 @@ const initialState: AuthState = {
 export const registerUser = createAsyncThunk(
   'auth/register',
   async (
-    data: { email: string; password: string; name: string; phone?: string },
+    data: { email: string; password: string; name: string },
     { rejectWithValue }
   ) => {
     try {
       const response = await api.post('/auth/register', data);
-      localStorage.setItem('token', response.data.token);
-      return response.data;
+      localStorage.setItem('token', response.data.data.token);
+      return response.data.data;
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || 'Registration failed'
@@ -52,8 +52,8 @@ export const loginUser = createAsyncThunk(
   ) => {
     try {
       const response = await api.post('/auth/login', data);
-      localStorage.setItem('token', response.data.token);
-      return response.data;
+      localStorage.setItem('token', response.data.data.token);
+      return response.data.data;
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || 'Login failed'
@@ -82,7 +82,7 @@ export const fetchCurrentUser = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await api.get('/auth/me');
-      return response.data;
+      return response.data.data;
     } catch (error: any) {
       localStorage.removeItem('token');
       return rejectWithValue(

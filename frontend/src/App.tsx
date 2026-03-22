@@ -3,7 +3,13 @@ import { Provider } from 'react-redux';
 import { store } from '@/store';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
-import HomePage from '@/pages/HomePage';
+import UsersPage from '@/pages/UsersPage';
+import DealershipsPage from '@/pages/DealershipsPage';
+import BookingPage from '@/pages/BookingPage';
+import SchedulePage from '@/pages/SchedulePage';
+import AppointmentsPage from '@/pages/AppointmentsPage';
+import UnauthorizedPage from '@/pages/UnauthorizedPage';
+import NotFoundPage from '@/pages/NotFoundPage';
 import { ProtectedRoute } from '@/components/shared';
 
 function App() {
@@ -18,15 +24,59 @@ function App() {
           {/* Protected routes */}
           <Route
             path="/"
+            element={<Navigate to="/dealerships" replace />}
+          />
+          <Route
+            path="/dealerships"
             element={
               <ProtectedRoute>
-                <HomePage />
+                <DealershipsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/schedule"
+            element={
+              <ProtectedRoute>
+                <SchedulePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/booking"
+            element={
+              <ProtectedRoute>
+                <BookingPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/appointments"
+            element={
+              <ProtectedRoute>
+                <AppointmentsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/users"
+            element={
+              <ProtectedRoute>
+                <UsersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/unauthorized"
+            element={
+              <ProtectedRoute>
+                <UnauthorizedPage />
               </ProtectedRoute>
             }
           />
 
-          {/* Catch-all redirect */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* Catch-all 404 block */}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </BrowserRouter>
     </Provider>

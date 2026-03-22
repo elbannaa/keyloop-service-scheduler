@@ -8,7 +8,6 @@ interface RegisterInput {
   email: string;
   password: string;
   name: string;
-  phone?: string;
 }
 
 interface LoginInput {
@@ -18,7 +17,7 @@ interface LoginInput {
 
 export class AuthService {
   async register(input: RegisterInput) {
-    const { email, password, name, phone } = input;
+    const { email, password, name } = input;
 
     // Check for duplicate email
     const existingUser = await prisma.user.findUnique({
@@ -38,7 +37,6 @@ export class AuthService {
         email,
         password: hashedPassword,
         name,
-        phone,
       },
     });
 
@@ -68,6 +66,11 @@ export class AuthService {
 
     if (!isPasswordValid) {
       throw new AppError(401, 'Invalid email or password');
+    }
+
+    // Check if user is active
+    if (!user.isActive) {
+      throw new AppError(403, 'Account is deactivated');
     }
 
     // Generate token
@@ -106,7 +109,7 @@ export class AuthService {
     return jwt.sign(
       { userId, email, role },
       config.jwt.secret,
-      { expiresIn: config.jwt.expiresIn as string }
+      { expiresIn: config.jwt.expiresIn as any }
     );
   }
 

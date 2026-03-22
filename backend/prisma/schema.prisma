@@ -7,20 +7,101 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id                 String       @id @default(uuid())
+  email              String       @unique
+  password           String
+  name               String
+  role               Role         @default(USER)
+  createdAt          DateTime     @default(now()) @map("created_at")
+  updatedAt          DateTime     @updatedAt @map("updated_at")
+  isActive           Boolean      @default(true) @map("is_active")
+  managedDealerships Dealership[] @relation("DealershipManager")
+
+  @@map("users")
+}
+
+model Dealership {
+  id                String        @id @default(uuid())
+  name              String
+  address           String
+  isActive          Boolean       @default(true) @map("is_active")
+  managerId         String?       @map("manager_id")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+  supportedServices ServiceType[] @default([NEW_CAR_CONSULTATION, VEHICLE_REPAIR, VEHICLE_MAINTENANCE]) @map("supported_services")
+  appointments      Appointment[]
+  manager           User?         @relation("DealershipManager", fields: [managerId], references: [id])
+  technicians       Technician[]
+  vehicles          Vehicle[]
+
+  @@map("dealerships")
+}
+
+model Technician {
+  id           String        @id @default(uuid())
+  name         String
+  isActive     Boolean       @default(true) @map("is_active")
+  dealershipId String        @map("dealership_id")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  appointments Appointment[]
+  dealership   Dealership    @relation(fields: [dealershipId], references: [id])
+
+  @@map("technicians")
+}
+
+model Vehicle {
+  id           String        @id @default(uuid())
+  make         String
+  model        String
+  year         Int
+  dealershipId String        @map("dealership_id")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  appointments Appointment[]
+  dealership   Dealership    @relation(fields: [dealershipId], references: [id])
+
+  @@map("vehicles")
+}
+
+model Appointment {
+  id            String            @id @default(uuid())
+  serviceType   ServiceType       @map("service_type")
+  startTime     DateTime          @map("start_time")
+  endTime       DateTime          @map("end_time")
+  customerName  String            @map("customer_name")
+  customerEmail String            @map("customer_email")
+  vehicleInfo   String?           @map("vehicle_info")
+  dealershipId  String            @map("dealership_id")
+  technicianId  String            @map("technician_id")
+  vehicleId     String?           @map("vehicle_id")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+  status        AppointmentStatus @default(SCHEDULED)
+  dealership    Dealership        @relation(fields: [dealershipId], references: [id])
+  technician    Technician        @relation(fields: [technicianId], references: [id])
+  vehicle       Vehicle?          @relation(fields: [vehicleId], references: [id])
+
+  @@map("appointments")
+}
+
 enum Role {
   USER
   ADMIN
+  MANAGER
 }
 
-model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String
-  phone     String?
-  role      Role     @default(USER)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+enum ServiceType {
+  NEW_CAR_CONSULTATION
+  VEHICLE_REPAIR
+  VEHICLE_MAINTENANCE
+}
 
-  @@map("users")
+enum AppointmentStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELED
+  PENDING
+  REJECTED
 }
