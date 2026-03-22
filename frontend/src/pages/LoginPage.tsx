@@ -75,7 +75,7 @@ const LoginPage: React.FC = () => {
         </div>
 
         {/* Card */}
-        <Card bordered={false} style={{ boxShadow: antdToken.boxShadowSecondary }}>
+        <Card variant="borderless" style={{ boxShadow: antdToken.boxShadowSecondary }}>
           <div style={{ textAlign: 'center', marginBottom: antdToken.paddingLG }}>
             <Title level={4} style={{ margin: 0 }}>Login</Title>
             <Text type="secondary">Enter your email and password to access your dashboard</Text>

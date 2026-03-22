@@ -164,7 +164,7 @@ const BookingPage: React.FC = () => {
   ];
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', paddingBottom: token.paddingLG }}>
+    <div style={{ margin: '0 auto', paddingBottom: token.paddingLG }}>
       <Space orientation="vertical" size={token.paddingLG} style={{ width: '100%' }}>
         <div>
           <Title level={2} style={{ marginBottom: token.paddingXS, fontWeight: 800 }}>Book a Service</Title>
@@ -185,7 +185,7 @@ const BookingPage: React.FC = () => {
           <Col xs={24} lg={20} xl={16}>
             {currentStep === 0 && (
               <Card
-                bordered={false}
+                variant="borderless"
                 styles={{ header: { backgroundColor: token.colorPrimaryBg, borderBottom: `1px solid ${token.colorPrimaryBorder}` } }}
                 title={<Title level={4} style={{ margin: 0 }}>Appointment Details</Title>}
                 style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.1)', borderRadius: token.borderRadiusLG, overflow: 'hidden' }}
@@ -369,7 +369,7 @@ const BookingPage: React.FC = () => {
 
             {currentStep === 1 && (
               <Card
-                bordered={false}
+                variant="borderless"
                 styles={{ header: { backgroundColor: token.colorPrimaryBg, borderBottom: `1px solid ${token.colorPrimaryBorder}` } }}
                 title={<Title level={4} style={{ margin: 0 }}>Confirm Your Booking</Title>}
                 style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.1)', borderRadius: token.borderRadiusLG, overflow: 'hidden' }}

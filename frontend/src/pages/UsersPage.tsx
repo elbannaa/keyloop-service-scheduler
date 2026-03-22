@@ -172,8 +172,14 @@ const UsersPage: React.FC = () => {
 
   return (
     <Space orientation="vertical" size={token.paddingLG} style={{ width: '100%', paddingBottom: token.paddingLG }}>
+      {/* Header section */}
+      <div style={{ padding: `0 ${token.paddingXS}px` }}>
+        <Title level={2} style={{ margin: 0 }}>Users</Title>
+        <Text type="secondary">Manage all users</Text>
+      </div>
+
       {/* Header & Filters */}
-      <Card bordered={false} styles={{ body: { padding: token.padding } }} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+      <Card variant="borderless" styles={{ body: { padding: token.padding } }} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
         <Row gutter={[16, 16]} align="middle">
           <Col xs={24} sm={12} md={12} lg={14}>
             <Input
@@ -227,7 +233,7 @@ const UsersPage: React.FC = () => {
       )}
 
       {/* Table */}
-      <Card bordered={false} styles={{ body: { padding: 0 } }} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.05)', overflow: 'hidden', borderRadius: token.borderRadiusLG }}>
+      <Card variant="borderless" styles={{ body: { padding: 0 } }} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.05)', overflow: 'hidden', borderRadius: token.borderRadiusLG }}>
         <Table
           columns={columns}
           dataSource={users}

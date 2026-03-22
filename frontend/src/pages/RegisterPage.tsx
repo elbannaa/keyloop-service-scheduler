@@ -2,17 +2,17 @@ import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { registerUser, clearError } from '@/store/authSlice';
-import { 
-  Card, 
-  Form, 
-  Input, 
-  Button, 
-  Typography, 
-  Alert, 
-  theme 
+import {
+  Card,
+  Form,
+  Input,
+  Button,
+  Typography,
+  Alert,
+  theme
 } from 'antd';
-import { 
-  UserOutlined, 
+import {
+  UserOutlined,
   MailOutlined,
   LockOutlined,
   UserAddOutlined
@@ -43,21 +43,21 @@ const RegisterPage: React.FC = () => {
   };
 
   return (
-    <main 
-      style={{ 
-        minHeight: '100vh', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
+    <main
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         background: antdToken.colorBgLayout,
-        padding: antdToken.paddingLG 
+        padding: antdToken.paddingLG
       }}
     >
       <div style={{ width: '100%', maxWidth: 400 }}>
         {/* Logo / Brand */}
         <div style={{ textAlign: 'center', marginBottom: antdToken.marginLG }}>
-          <div 
-            style={{ 
+          <div
+            style={{
               margin: `0 auto ${antdToken.marginMD}px`,
               display: 'flex',
               alignItems: 'center',
@@ -76,7 +76,7 @@ const RegisterPage: React.FC = () => {
         </div>
 
         {/* Card */}
-        <Card bordered={false} style={{ boxShadow: antdToken.boxShadowSecondary }}>
+        <Card variant="borderless" style={{ boxShadow: antdToken.boxShadowSecondary }}>
           <div style={{ textAlign: 'center', marginBottom: antdToken.paddingLG }}>
             <Title level={4} style={{ margin: 0 }}>Register</Title>
             <Text type="secondary">Fill in your details to create a new account</Text>
@@ -100,9 +100,9 @@ const RegisterPage: React.FC = () => {
               name="name"
               rules={[{ required: true, message: 'Please input your full name!' }]}
             >
-              <Input 
-                prefix={<UserOutlined style={{ color: antdToken.colorTextPlaceholder }} />} 
-                placeholder="John Doe" 
+              <Input
+                prefix={<UserOutlined style={{ color: antdToken.colorTextPlaceholder }} />}
+                placeholder="John Doe"
               />
             </Form.Item>
 
@@ -114,9 +114,9 @@ const RegisterPage: React.FC = () => {
                 { type: 'email', message: 'Please enter a valid email!' }
               ]}
             >
-              <Input 
-                prefix={<MailOutlined style={{ color: antdToken.colorTextPlaceholder }} />} 
-                placeholder="you@example.com" 
+              <Input
+                prefix={<MailOutlined style={{ color: antdToken.colorTextPlaceholder }} />}
+                placeholder="you@example.com"
               />
             </Form.Item>
 
@@ -128,17 +128,17 @@ const RegisterPage: React.FC = () => {
                 { min: 6, message: 'Password must be at least 6 characters!' }
               ]}
             >
-              <Input.Password 
-                prefix={<LockOutlined style={{ color: antdToken.colorTextPlaceholder }} />} 
-                placeholder="Min. 6 characters" 
+              <Input.Password
+                prefix={<LockOutlined style={{ color: antdToken.colorTextPlaceholder }} />}
+                placeholder="Min. 6 characters"
               />
             </Form.Item>
 
             <Form.Item style={{ marginBottom: 16 }}>
-              <Button 
-                type="primary" 
-                htmlType="submit" 
-                block 
+              <Button
+                type="primary"
+                htmlType="submit"
+                block
                 loading={loading}
                 style={{ fontWeight: 600 }}
               >

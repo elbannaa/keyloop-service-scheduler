@@ -8,7 +8,7 @@ import { CalendarDays } from 'lucide-react';
 import { NAVIGATION_MENU_ITEMS } from '@/constants/navigation';
 
 const { Sider } = Layout;
-const { Text, Title } = Typography;
+const { Title } = Typography;
 
 export const Sidebar: React.FC<{
   collapsed: boolean;
@@ -45,11 +45,11 @@ export const Sidebar: React.FC<{
       trigger={null}
     >
       <div style={{ padding: token.padding, display: 'flex', alignItems: 'center', gap: token.paddingSM }}>
-        <div 
-          style={{ 
-            width: 32, 
-            height: 32, 
-            borderRadius: 8, 
+        <div
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: 8,
             backgroundColor: token.colorPrimary,
             display: 'flex',
             alignItems: 'center',
@@ -65,14 +65,6 @@ export const Sidebar: React.FC<{
           </Title>
         )}
       </div>
-      
-      {!collapsed && (
-        <div style={{ padding: `${token.paddingSM}px ${token.paddingLG}px`, opacity: 0.6 }}>
-          <Text strong style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>
-            Main Menu
-          </Text>
-        </div>
-      )}
 
       <Menu
         mode="inline"

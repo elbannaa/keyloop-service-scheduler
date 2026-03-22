@@ -157,7 +157,7 @@ const SchedulePage: React.FC = () => {
       </div>
 
       {/* Filters bar */}
-      <Card bordered={false} styles={{ body: { padding: token.padding } }} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+      <Card variant="borderless" styles={{ body: { padding: token.padding } }} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
         <Row gutter={[16, 16]} align="middle">
           <Col xs={24} sm={12} md={6}>
             <DatePicker
@@ -191,7 +191,7 @@ const SchedulePage: React.FC = () => {
       <Row gutter={[token.paddingLG, token.paddingLG]}>
         <Col xs={24} lg={16}>
           <Card
-            bordered={false}
+            variant="borderless"
             styles={{ body: { padding: 0 } }}
             style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.05)', borderRadius: token.borderRadiusLG, overflow: 'hidden' }}
           >
@@ -236,7 +236,7 @@ const SchedulePage: React.FC = () => {
                 <span>Appointments for {selectedDate.format(DATE_TIME_DISPLAY_FORMAT)}</span>
               </Space>
             }
-            bordered={false}
+            variant="borderless"
             style={{ height: '100%', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', borderRadius: token.borderRadiusLG }}
             loading={scheduleLoading}
           >

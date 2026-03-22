@@ -22,7 +22,7 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { Role } from '@/constants/role';
-import { DATE_DISPLAY_FORMAT, DATE_TIME_DISPLAY_FORMAT, TIME_DISPLAY_FORMAT } from '@/constants';
+import { DATE_DISPLAY_FORMAT, TIME_DISPLAY_FORMAT } from '@/constants';
 import AppointmentDetailModal from '@/components/appointments/AppointmentDetailModal';
 
 const { Title, Text } = Typography;
@@ -96,7 +96,7 @@ const AppointmentsPage: React.FC = () => {
       key: 'dateTime',
       render: (_: any, record: any) => (
         <Space orientation="vertical" size={0}>
-          <Text>{dayjs(record.startTime).format(DATE_TIME_DISPLAY_FORMAT)}</Text>
+          <Text>{dayjs(record.startTime).format(DATE_DISPLAY_FORMAT)}</Text>
           <Text type="secondary" style={{ fontSize: 12 }}>{dayjs(record.startTime).format(TIME_DISPLAY_FORMAT)} - {dayjs(record.endTime).format(TIME_DISPLAY_FORMAT)}</Text>
         </Space>
       ),
@@ -163,7 +163,7 @@ const AppointmentsPage: React.FC = () => {
       </div>
 
       {/* Filters card */}
-      <Card bordered={false} styles={{ body: { padding: token.padding } }} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+      <Card variant="borderless" styles={{ body: { padding: token.padding } }} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
         <Row gutter={[16, 16]} align="middle">
           {user?.role !== Role.USER && (
             <Col xs={24} sm={12} md={8}>
@@ -213,7 +213,7 @@ const AppointmentsPage: React.FC = () => {
       </Card>
 
       {/* Table card */}
-      <Card bordered={false} styles={{ body: { padding: 0 } }} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.05)', overflow: 'hidden', borderRadius: token.borderRadiusLG }}>
+      <Card variant="borderless" styles={{ body: { padding: 0 } }} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.05)', overflow: 'hidden', borderRadius: token.borderRadiusLG }}>
         <Table
           columns={columns}
           dataSource={appointments}

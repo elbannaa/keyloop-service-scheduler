@@ -14,7 +14,8 @@ import {
   Tooltip,
   theme as antdTheme,
   Tag,
-  Select
+  Select,
+  Card,
 } from 'antd';
 import {
   SearchOutlined,
@@ -30,7 +31,6 @@ import {
   RetweetOutlined,
   GlobalOutlined,
   CarOutlined,
-  PhoneOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { CreateDealershipDialog } from '@/components/forms/CreateDealershipDialog';
@@ -39,7 +39,7 @@ import { AssignManagerDialog } from '@/components/forms/AssignManagerDialog';
 import debounce from 'lodash.debounce';
 import { Role } from '@/constants/role';
 
-const { Text } = Typography;
+const { Title, Text } = Typography;
 
 const DealershipsPage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -198,10 +198,10 @@ const DealershipsPage: React.FC = () => {
             <Button
               type="primary"
               size="small"
-              icon={<PhoneOutlined />}
+              style={{ backgroundColor: token.colorPrimary, color: token.colorWhite }}
               onClick={() => navigate('/booking', { state: { dealershipId: d.id, dealershipName: d.name } })}
             >
-              Contact
+              Book Appointment
             </Button>
           );
         }
@@ -286,37 +286,45 @@ const DealershipsPage: React.FC = () => {
 
   return (
     <Space orientation="vertical" size={token.paddingLG} style={{ width: '100%', paddingBottom: token.paddingLG }}>
-      <Row gutter={[token.paddingMD, token.paddingMD]} align="middle" justify="space-between">
-        <Col xs={24} sm={12} md={8}>
-          <Input
-            placeholder="Search dealerships by name or location"
-            prefix={<SearchOutlined style={{ color: token.colorTextPlaceholder }} />}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            allowClear
-          />
-        </Col>
-        <Col>
-          <Space>
-            <Tooltip title="Refresh">
-              <Button
-                icon={<ReloadOutlined spin={loading} />}
-                onClick={() => dispatch(fetchDealerships({ search }))}
-                disabled={loading}
-              />
-            </Tooltip>
-            {user?.role === Role.ADMIN && (
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => setIsCreateOpen(true)}
-              >
-                Add Dealership
-              </Button>
-            )}
-          </Space>
-        </Col>
-      </Row>
+      {/* Header section */}
+      <div style={{ padding: `0 ${token.paddingXS}px` }}>
+        <Title level={2} style={{ margin: 0 }}>Dealerships</Title>
+        <Text type="secondary">Manage all dealerships</Text>
+      </div>
+
+      <Card variant="borderless" styles={{ body: { padding: token.padding } }} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+        <Row gutter={[token.paddingMD, token.paddingMD]} align="middle" justify="space-between">
+          <Col xs={24} sm={12} md={8}>
+            <Input
+              placeholder="Search dealerships by name or location"
+              prefix={<SearchOutlined style={{ color: token.colorTextPlaceholder }} />}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              allowClear
+            />
+          </Col>
+          <Col>
+            <Space>
+              <Tooltip title="Refresh">
+                <Button
+                  icon={<ReloadOutlined spin={loading} />}
+                  onClick={() => dispatch(fetchDealerships({ search }))}
+                  disabled={loading}
+                />
+              </Tooltip>
+              {user?.role === Role.ADMIN && (
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => setIsCreateOpen(true)}
+                >
+                  Add Dealership
+                </Button>
+              )}
+            </Space>
+          </Col>
+        </Row>
+      </Card>
 
       {error && (
         <div style={{
