@@ -1,15 +1,15 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { fetchUsers, toggleUserStatus } from '@/store/usersSlice';
-import { 
-  Table, 
-  Input, 
-  Button, 
-  Badge, 
-  Select, 
-  Space, 
-  Dropdown, 
-  Typography, 
+import {
+  Table,
+  Input,
+  Button,
+  Badge,
+  Select,
+  Space,
+  Dropdown,
+  Typography,
   Card,
   Row,
   Col,
@@ -18,10 +18,10 @@ import {
   Alert
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { 
-  SearchOutlined, 
-  UserAddOutlined, 
-  ReloadOutlined, 
+import {
+  SearchOutlined,
+  UserAddOutlined,
+  ReloadOutlined,
   MoreOutlined,
   SafetyCertificateOutlined,
   EditOutlined,
@@ -33,6 +33,7 @@ import { EditUserDialog } from '@/components/forms/EditUserDialog';
 import type { UserData } from '@/store/usersSlice';
 import debounce from 'lodash.debounce';
 import { Role } from '@/constants/role';
+import axios from '@/lib/axios';
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -72,6 +73,15 @@ const UsersPage: React.FC = () => {
     }
   };
 
+  const handleAdminResetPassword = async (id: string) => {
+    try {
+      await axios.post(`/users/${id}/reset-password`);
+      message.success('Password has been reset and emailed to the user');
+    } catch (err: any) {
+      message.error(err.response?.data?.message || 'Failed to reset password');
+    }
+  };
+
   if (currentUser?.role !== Role.ADMIN) {
     return (
       <div style={{ textAlign: 'center', padding: '100px 24px' }}>
@@ -90,7 +100,7 @@ const UsersPage: React.FC = () => {
       title: 'User',
       key: 'user',
       render: (_, record) => (
-        <Space direction="vertical" size={2}>
+        <Space orientation="vertical" size={2}>
           <Text strong style={{ fontSize: 13 }}>{record.name}</Text>
           <Text type="secondary" style={{ fontSize: 11 }} className="md:hidden">{record.email}</Text>
         </Space>
@@ -108,9 +118,9 @@ const UsersPage: React.FC = () => {
       dataIndex: 'role',
       key: 'role',
       render: (role) => (
-        <Badge 
-          status={role === 'ADMIN' ? 'processing' : 'default'} 
-          text={<Text style={{ fontSize: 13 }}>{role.charAt(0).toUpperCase() + role.slice(1).toLowerCase()}</Text>} 
+        <Badge
+          status={role === 'ADMIN' ? 'processing' : 'default'}
+          text={<Text style={{ fontSize: 13 }}>{role.charAt(0).toUpperCase() + role.slice(1).toLowerCase()}</Text>}
         />
       ),
     },
@@ -119,9 +129,9 @@ const UsersPage: React.FC = () => {
       dataIndex: 'isActive',
       key: 'isActive',
       render: (isActive) => (
-        <Badge 
-          color={isActive ? token.colorPrimary : token.colorError} 
-          text={<Text style={{ fontSize: 13 }}>{isActive ? 'Active' : 'Inactive'}</Text>} 
+        <Badge
+          color={isActive ? token.colorPrimary : token.colorError}
+          text={<Text style={{ fontSize: 13 }}>{isActive ? 'Active' : 'Inactive'}</Text>}
         />
       ),
     },
@@ -146,6 +156,15 @@ const UsersPage: React.FC = () => {
                 danger: record.isActive,
                 onClick: () => handleToggleStatus(record.id, record.isActive),
               },
+              {
+                type: 'divider',
+              },
+              {
+                key: 'reset',
+                label: 'Reset Password',
+                icon: <ReloadOutlined />,
+                onClick: () => handleAdminResetPassword(record.id),
+              },
             ],
           }}
           trigger={['click']}
@@ -157,7 +176,7 @@ const UsersPage: React.FC = () => {
   ];
 
   return (
-    <Space direction="vertical" size={token.paddingLG} style={{ width: '100%', paddingBottom: token.paddingLG }}>
+    <Space orientation="vertical" size={token.paddingLG} style={{ width: '100%', paddingBottom: token.paddingLG }}>
       {/* Header & Filters */}
       <Card bordered={false} styles={{ body: { padding: token.padding } }} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
         <Row gutter={[16, 16]} align="middle">
@@ -171,9 +190,9 @@ const UsersPage: React.FC = () => {
             />
           </Col>
           <Col xs={24} sm={12} md={6} lg={5}>
-            <Select 
-              value={roleFilter} 
-              onChange={setRoleFilter} 
+            <Select
+              value={roleFilter}
+              onChange={setRoleFilter}
               style={{ width: '100%' }}
               placeholder="All Roles"
             >
@@ -185,13 +204,13 @@ const UsersPage: React.FC = () => {
           </Col>
           <Col xs={24} sm={24} md={6} lg={5}>
             <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
-              <Button 
-                icon={<ReloadOutlined spin={loading} />} 
-                onClick={() => dispatch(fetchUsers({ search, role: roleFilter === 'all' ? undefined : roleFilter }))} 
+              <Button
+                icon={<ReloadOutlined spin={loading} />}
+                onClick={() => dispatch(fetchUsers({ search, role: roleFilter === 'all' ? undefined : roleFilter }))}
               />
-              <Button 
-                type="primary" 
-                icon={<UserAddOutlined />} 
+              <Button
+                type="primary"
+                icon={<UserAddOutlined />}
                 onClick={() => setIsCreateOpen(true)}
                 style={{ fontWeight: 500 }}
               >
@@ -219,7 +238,7 @@ const UsersPage: React.FC = () => {
           dataSource={users}
           rowKey="id"
           loading={loading}
-          pagination={{ 
+          pagination={{
             pageSize: 10,
             showSizeChanger: false,
             hideOnSinglePage: true,

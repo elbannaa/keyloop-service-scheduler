@@ -1,15 +1,18 @@
 import prisma from '../../lib/prisma';
 import { AppError } from '../auth/auth.service';
 import { Role } from '../../constants/role';
+import { ServiceType } from '@prisma/client';
 
 interface CreateDealershipInput {
   name: string;
   address: string;
+  supportedServices?: ServiceType[];
 }
 
 interface UpdateDealershipInput {
   name?: string;
   address?: string;
+  supportedServices?: ServiceType[];
 }
 
 interface ListDealershipsFilters {
@@ -131,6 +134,7 @@ export class DealershipsService {
       data: {
         ...(input.name !== undefined && { name: input.name }),
         ...(input.address !== undefined && { address: input.address }),
+        ...(input.supportedServices !== undefined && { supportedServices: input.supportedServices }),
       },
       include: { manager: { select: { id: true, name: true, email: true } } },
     });

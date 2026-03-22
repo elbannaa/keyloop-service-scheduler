@@ -118,7 +118,6 @@ const LoginPage: React.FC = () => {
                 placeholder="your password"
               />
             </Form.Item>
-
             <Form.Item>
               <Button
                 type="primary"

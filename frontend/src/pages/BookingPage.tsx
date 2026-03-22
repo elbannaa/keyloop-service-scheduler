@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { fetchDealerships } from '@/store/dealershipsSlice';
+import { fetchDealerships, fetchVehicles } from '@/store/dealershipsSlice';
 import {
   fetchAvailability,
   createAppointment,
@@ -46,6 +47,7 @@ const { Option } = Select;
 
 const BookingPage: React.FC = () => {
   const dispatch = useAppDispatch();
+  const location = useLocation();
   const { data: dealerships } = useAppSelector((state) => state.dealerships);
   const { availableSlots, loading: slotsLoading, bookingLoading, lastBooking, error } = useAppSelector((state) => state.appointments);
   const { token } = theme.useToken();
@@ -57,12 +59,14 @@ const BookingPage: React.FC = () => {
     customerName: string;
     customerEmail: string;
     vehicleInfo: string;
+    vehicleId?: string;
   }>({
     serviceType: '' as ServiceTypeType | '',
     date: dayjs().format('YYYY-MM-DD'),
     customerName: '',
     customerEmail: '',
     vehicleInfo: '',
+    vehicleId: undefined,
   });
 
   const [selectedDealershipId, setSelectedDealershipId] = useState<string | null>(null);
@@ -70,9 +74,21 @@ const BookingPage: React.FC = () => {
 
   useEffect(() => {
     dispatch(fetchDealerships());
-  }, [dispatch]);
+
+    // Pre-populate if coming from DealershipsPage
+    if (location.state?.dealershipId) {
+      setSelectedDealershipId(location.state.dealershipId);
+      setCurrentStep(0); // Ensure we are on first step or skip to first step with dealership selected
+    }
+  }, [dispatch, location.state]);
 
   useEffect(() => {
+    if (selectedDealershipId) {
+      dispatch(fetchVehicles(selectedDealershipId));
+    }
+  }, [selectedDealershipId, dispatch]);
+
+  const handleCheckAvailability = () => {
     if (selectedDealershipId && formData.serviceType && formData.date) {
       dispatch(fetchAvailability({
         dealershipId: selectedDealershipId,
@@ -81,7 +97,7 @@ const BookingPage: React.FC = () => {
       }));
       setSelectedSlot(null);
     }
-  }, [selectedDealershipId, formData.serviceType, formData.date, dispatch]);
+  };
 
   const handleBooking = async () => {
     if (!selectedDealershipId || !formData.serviceType || !selectedSlot) return;
@@ -94,6 +110,7 @@ const BookingPage: React.FC = () => {
         customerName: formData.customerName,
         customerEmail: formData.customerEmail,
         vehicleInfo: formData.vehicleInfo,
+        vehicleId: formData.vehicleId,
       })).unwrap();
       setCurrentStep(3);
     } catch (err: any) {
@@ -117,9 +134,9 @@ const BookingPage: React.FC = () => {
 
   const getServiceLabel = (type: ServiceTypeType) => {
     switch (type) {
-      case ServiceType.SALES_CONSULTATION: return 'Sales Consultation';
-      case ServiceType.DETAILED_CONSULTATION: return 'Detailed Consultation';
-      case ServiceType.REPAIR_MAINTENANCE: return 'Repair / Maintenance';
+      case ServiceType.NEW_CAR_CONSULTATION: return 'New Car Consultation';
+      case ServiceType.VEHICLE_REPAIR: return 'Vehicle Repair';
+      case ServiceType.VEHICLE_MAINTENANCE: return 'Vehicle Maintenance';
       default: return '';
     }
   };
@@ -129,7 +146,7 @@ const BookingPage: React.FC = () => {
       title: 'Dealership',
       key: 'dealership',
       render: (_, record) => (
-        <Space direction="vertical" size={0}>
+        <Space orientation="vertical" size={0}>
           <Text strong>{record.name}</Text>
           <Text type="secondary" style={{ fontSize: 12 }}>{record.address}</Text>
         </Space>
@@ -158,7 +175,7 @@ const BookingPage: React.FC = () => {
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', paddingBottom: token.paddingLG }}>
-      <Space direction="vertical" size={token.paddingLG} style={{ width: '100%' }}>
+      <Space orientation="vertical" size={token.paddingLG} style={{ width: '100%' }}>
         <div>
           <Title level={2} style={{ marginBottom: token.paddingXS, fontWeight: 800 }}>Book a Service</Title>
           <Text type="secondary">Find a dealership and schedule your appointment in minutes.</Text>
@@ -167,6 +184,7 @@ const BookingPage: React.FC = () => {
         {currentStep < 3 && (
           <div style={{ maxWidth: 800, margin: '0 auto', width: '100%' }}>
             <Steps
+              size="small"
               current={currentStep}
               items={steps}
               style={{ marginBottom: token.paddingXL }}
@@ -182,10 +200,10 @@ const BookingPage: React.FC = () => {
                 bordered={false}
                 style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.05)', borderRadius: token.borderRadiusLG }}
               >
-                <Space direction="vertical" size={token.paddingMD} style={{ width: '100%' }}>
+                <Space orientation="vertical" size={token.paddingMD} style={{ width: '100%' }}>
                   <Row gutter={token.paddingMD}>
                     <Col span={12}>
-                      <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                      <Space orientation="vertical" size={4} style={{ width: '100%' }}>
                         <Text strong style={{ fontSize: 12 }}>Service Type</Text>
                         <Select
                           style={{ width: '100%' }}
@@ -193,14 +211,22 @@ const BookingPage: React.FC = () => {
                           value={formData.serviceType || undefined}
                           onChange={(val) => setFormData({ ...formData, serviceType: val })}
                         >
-                          <Option value={ServiceType.SALES_CONSULTATION}>Sales Consultation</Option>
-                          <Option value={ServiceType.DETAILED_CONSULTATION} >Detailed Consultation</Option>
-                          <Option value={ServiceType.REPAIR_MAINTENANCE}>Repair / Maintenance</Option>
+                          {selectedDealershipId ? (
+                            dealerships.find(d => d.id === selectedDealershipId)?.supportedServices.map(s => (
+                              <Option key={s} value={s}>{getServiceLabel(s as ServiceTypeType)}</Option>
+                            ))
+                          ) : (
+                            <>
+                              <Option value={ServiceType.NEW_CAR_CONSULTATION}>New Car Consultation</Option>
+                              <Option value={ServiceType.VEHICLE_REPAIR} >Vehicle Repair</Option>
+                              <Option value={ServiceType.VEHICLE_MAINTENANCE}>Vehicle Maintenance</Option>
+                            </>
+                          )}
                         </Select>
                       </Space>
                     </Col>
                     <Col span={12}>
-                      <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                      <Space orientation="vertical" size={4} style={{ width: '100%' }}>
                         <Text strong style={{ fontSize: 12 }}>Preferred Date</Text>
                         <DatePicker
                           style={{ width: '100%' }}
@@ -214,7 +240,7 @@ const BookingPage: React.FC = () => {
 
                   <Row gutter={token.paddingMD}>
                     <Col span={12}>
-                      <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                      <Space orientation="vertical" size={4} style={{ width: '100%' }}>
                         <Text strong style={{ fontSize: 12 }}>Full Name</Text>
                         <Input
                           prefix={<UserOutlined style={{ color: token.colorTextPlaceholder }} />}
@@ -225,7 +251,7 @@ const BookingPage: React.FC = () => {
                       </Space>
                     </Col>
                     <Col span={12}>
-                      <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                      <Space orientation="vertical" size={4} style={{ width: '100%' }}>
                         <Text strong style={{ fontSize: 12 }}>Email Address</Text>
                         <Input
                           prefix={<MailOutlined style={{ color: token.colorTextPlaceholder }} />}
@@ -238,7 +264,7 @@ const BookingPage: React.FC = () => {
                     </Col>
                   </Row>
 
-                  <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                  <Space orientation="vertical" size={4} style={{ width: '100%' }}>
                     <Text strong style={{ fontSize: 12 }}>Vehicle Info / Notes</Text>
                     <Input
                       prefix={<CarOutlined style={{ color: token.colorTextPlaceholder }} />}
@@ -248,13 +274,30 @@ const BookingPage: React.FC = () => {
                     />
                   </Space>
 
+                  {(formData.serviceType === ServiceType.VEHICLE_REPAIR || formData.serviceType === ServiceType.VEHICLE_MAINTENANCE) && (
+                    <Space orientation="vertical" size={4} style={{ width: '100%' }}>
+                      <Text strong style={{ fontSize: 12 }}>Target Vehicle (Optional)</Text>
+                      <Select
+                        style={{ width: '100%' }}
+                        placeholder="Select a vehicle if available in our system..."
+                        allowClear
+                        value={formData.vehicleId}
+                        onChange={(val) => setFormData({ ...formData, vehicleId: val })}
+                      >
+                        {useAppSelector(state => state.dealerships.vehicles).map(v => (
+                          <Option key={v.id} value={v.id}>{v.year} {v.make} {v.model}</Option>
+                        ))}
+                      </Select>
+                    </Space>
+                  )}
+
                   <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: token.paddingXS }}>
                     <Button
                       type="primary"
                       onClick={() => setCurrentStep(1)}
                       disabled={!formData.serviceType || !formData.customerName || !formData.customerEmail}
                       icon={<RightOutlined />}
-                      iconPosition="end"
+                      iconPlacement="end"
                     >
                       Continue
                     </Button>
@@ -264,7 +307,7 @@ const BookingPage: React.FC = () => {
             )}
 
             {currentStep === 1 && (
-              <Space direction="vertical" size={token.paddingLG} style={{ width: '100%' }}>
+              <Space orientation="vertical" size={token.paddingLG} style={{ width: '100%' }}>
                 <Card
                   title={<Space><BuildOutlined /> Select Dealership</Space>}
                   bordered={false}
@@ -302,19 +345,37 @@ const BookingPage: React.FC = () => {
                         showIcon
                       />
                     ) : (
-                      <Row gutter={[token.paddingSM, token.paddingSM]}>
-                        {availableSlots.map((slot) => (
-                          <Col key={slot} xs={8} sm={6} md={4}>
-                            <Button
-                              block
-                              type={selectedSlot === slot ? 'primary' : 'default'}
-                              onClick={() => setSelectedSlot(slot)}
-                            >
-                              {dayjs(slot).format('HH:mm')}
-                            </Button>
-                          </Col>
-                        ))}
-                      </Row>
+                      <>
+                        <div style={{ marginBottom: token.paddingMD, display: 'flex', justifyContent: 'center' }}>
+                          <Button
+                            onClick={handleCheckAvailability}
+                            loading={slotsLoading}
+                            type="dashed"
+                          >
+                            Check Available Slots
+                          </Button>
+                        </div>
+                        {availableSlots.length > 0 && (
+                          <Row gutter={[token.paddingSM, token.paddingSM]}>
+                            {availableSlots.map((slot) => (
+                              <Col key={slot} xs={8} sm={6} md={4}>
+                                <Button
+                                  block
+                                  type={selectedSlot === slot ? 'primary' : 'default'}
+                                  onClick={() => setSelectedSlot(slot)}
+                                >
+                                  {dayjs(slot).format('HH:mm')}
+                                </Button>
+                              </Col>
+                            ))}
+                          </Row>
+                        )}
+                        {availableSlots.length === 0 && !slotsLoading && (
+                          <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                            <Text type="secondary">Click check button to see availability</Text>
+                          </div>
+                        )}
+                      </>
                     )}
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 32, borderTop: `1px solid ${token.colorBorderSecondary}`, paddingTop: token.paddingLG }}>
@@ -345,7 +406,7 @@ const BookingPage: React.FC = () => {
 
                 <Row gutter={[token.paddingLG, token.paddingMD]}>
                   <Col xs={24} md={12}>
-                    <Space direction="vertical" size={token.paddingLG} style={{ width: '100%' }}>
+                    <Space orientation="vertical" size={token.paddingLG} style={{ width: '100%' }}>
                       <div>
                         <Text type="secondary" strong style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Dealership</Text>
                         <div style={{ marginTop: token.paddingXS }}>
@@ -365,7 +426,7 @@ const BookingPage: React.FC = () => {
                   </Col>
 
                   <Col xs={24} md={12}>
-                    <Space direction="vertical" size={token.paddingLG} style={{ width: '100%' }}>
+                    <Space orientation="vertical" size={token.paddingLG} style={{ width: '100%' }}>
                       <div>
                         <Text type="secondary" strong style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Service</Text>
                         <div style={{ marginTop: token.paddingXS }}>
@@ -425,7 +486,7 @@ const BookingPage: React.FC = () => {
                       <Text type="secondary" strong style={{ fontSize: 10, textTransform: 'uppercase' }}>Booking ID</Text>
                       <Text strong style={{ fontFamily: 'monospace' }}>{lastBooking.id.split('-')[0].toUpperCase()}</Text>
                     </div>
-                    <Space direction="vertical" size={token.paddingSM} style={{ width: '100%' }}>
+                    <Space orientation="vertical" size={token.paddingSM} style={{ width: '100%' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <Text type="secondary" style={{ fontSize: 13 }}>Technician</Text>
                         <Text strong style={{ fontSize: 13 }}>Assigned Automatically</Text>
@@ -447,9 +508,9 @@ const BookingPage: React.FC = () => {
 
           {currentStep < 3 && (
             <Col xs={24} lg={8}>
-              <Space direction="vertical" size={token.paddingLG} style={{ width: '100%' }}>
+              <Space orientation="vertical" size={token.paddingLG} style={{ width: '100%' }}>
                 <Card title={<Text strong type="secondary" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Need Assistance?</Text>} bordered={false}>
-                  <Space direction="vertical" size={token.paddingMD}>
+                  <Space orientation="vertical" size={token.paddingMD}>
                     <div>
                       <Text strong style={{ fontSize: 13 }}>Service Types</Text>
                       <Paragraph type="secondary" style={{ fontSize: 12, marginTop: 4 }}>

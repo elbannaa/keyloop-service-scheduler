@@ -62,7 +62,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
       key: 'profile',
       label: (
         <div style={{ padding: '4px 0' }}>
-          <Space direction="vertical" size={0}>
+          <Space orientation="vertical" size={0}>
             <Text strong style={{ fontSize: 14 }}>{user?.name}</Text>
             <Text type="secondary" style={{ fontSize: 12 }}>{user?.email}</Text>
           </Space>

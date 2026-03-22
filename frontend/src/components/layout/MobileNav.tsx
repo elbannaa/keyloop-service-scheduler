@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppSelector } from '@/store/hooks';
 import type { RootState } from '@/store';
-import { Dropdown, Button, theme } from 'antd';
+import { Dropdown, Button } from 'antd';
 import type { MenuProps } from 'antd';
 import { MenuOutlined } from '@ant-design/icons';
 import { NAVIGATION_MENU_ITEMS } from '@/constants/navigation';

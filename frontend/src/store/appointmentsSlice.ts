@@ -2,9 +2,9 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '@/lib/axios';
 
 export const ServiceType = {
-  SALES_CONSULTATION: 'SALES_CONSULTATION',
-  DETAILED_CONSULTATION: 'DETAILED_CONSULTATION',
-  REPAIR_MAINTENANCE: 'REPAIR_MAINTENANCE',
+  NEW_CAR_CONSULTATION: 'NEW_CAR_CONSULTATION',
+  VEHICLE_REPAIR: 'VEHICLE_REPAIR',
+  VEHICLE_MAINTENANCE: 'VEHICLE_MAINTENANCE',
 } as const;
 
 export type ServiceTypeType = typeof ServiceType[keyof typeof ServiceType];

@@ -2,28 +2,28 @@ import React, { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchSchedule, createAppointment } from '@/store/appointmentsSlice';
 import { fetchDealerships } from '@/store/dealershipsSlice';
-import { 
-  Card, 
-  Select, 
-  Button, 
-  Typography, 
-  Space, 
-  Row, 
-  Col, 
-  Modal, 
-  Form, 
-  Input, 
-  DatePicker, 
+import {
+  Card,
+  Select,
+  Button,
+  Typography,
+  Space,
+  Row,
+  Col,
+  Modal,
+  Form,
+  Input,
+  DatePicker,
   Calendar,
   message,
   theme,
   Badge
 } from 'antd';
-import { 
-  ClockCircleOutlined, 
-  BuildOutlined, 
-  LeftOutlined, 
-  RightOutlined, 
+import {
+  ClockCircleOutlined,
+  BuildOutlined,
+  LeftOutlined,
+  RightOutlined,
   PlusOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -97,7 +97,7 @@ const SchedulePage: React.FC = () => {
   const dateCellRender = (value: Dayjs) => {
     const isWeekend = value.day() === 0 || value.day() === 6;
     const isCurrentMonth = value.month() === selectedDate.month();
-    
+
     if (!isCurrentMonth) return null;
 
     return (
@@ -123,18 +123,18 @@ const SchedulePage: React.FC = () => {
           </Col>
           <Col>
             <Space size={4}>
-              <Button 
-                type="text" 
-                icon={<LeftOutlined />} 
-                onClick={() => onChange(value.subtract(1, 'month'))} 
+              <Button
+                type="text"
+                icon={<LeftOutlined />}
+                onClick={() => onChange(value.subtract(1, 'month'))}
               />
-              <Button 
-                type="text" 
-                icon={<RightOutlined />} 
-                onClick={() => onChange(value.add(1, 'month'))} 
+              <Button
+                type="text"
+                icon={<RightOutlined />}
+                onClick={() => onChange(value.add(1, 'month'))}
               />
-              <Button 
-                size="small" 
+              <Button
+                size="small"
                 onClick={() => onChange(dayjs())}
                 style={{ marginLeft: 8 }}
               >
@@ -149,19 +149,19 @@ const SchedulePage: React.FC = () => {
 
   return (
     <div style={{ maxWidth: 1600, margin: '0 auto', paddingBottom: token.paddingLG }}>
-      <Space direction="vertical" size={token.paddingLG} style={{ width: '100%' }}>
+      <Space orientation="vertical" size={token.paddingLG} style={{ width: '100%' }}>
         {/* Top Bar */}
         <Row justify="space-between" align="middle" gutter={[token.paddingMD, token.paddingMD]}>
           <Col xs={24} md={18}>
             <Space wrap size={token.paddingSM}>
-              <DatePicker 
-                value={selectedDate} 
-                onChange={(date) => date && setSelectedDate(date)} 
+              <DatePicker
+                value={selectedDate}
+                onChange={(date) => date && setSelectedDate(date)}
                 allowClear={false}
               />
-              <Select 
-                value={selectedDealershipId} 
-                onChange={setSelectedDealershipId} 
+              <Select
+                value={selectedDealershipId}
+                onChange={setSelectedDealershipId}
                 style={{ width: 220 }}
                 placeholder="Select dealership"
               >
@@ -174,9 +174,9 @@ const SchedulePage: React.FC = () => {
                   </Option>
                 ))}
               </Select>
-              <Button 
-                type="primary" 
-                icon={<PlusOutlined />} 
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
                 onClick={() => setIsAddDialogOpen(true)}
               >
                 Add Appointment
@@ -186,12 +186,12 @@ const SchedulePage: React.FC = () => {
         </Row>
 
         {/* Main Content */}
-        <Card 
-          bordered={false} 
-          styles={{ body: { padding: 0 } }} 
+        <Card
+          bordered={false}
+          styles={{ body: { padding: 0 } }}
           style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.05)', borderRadius: token.borderRadiusLG, overflow: 'hidden' }}
         >
-          <Calendar 
+          <Calendar
             fullscreen={true}
             value={selectedDate}
             onSelect={setSelectedDate}
@@ -199,9 +199,9 @@ const SchedulePage: React.FC = () => {
             cellRender={dateCellRender}
           />
 
-          <div style={{ 
-            padding: `${token.paddingMD}px ${token.paddingLG}px`, 
-            borderTop: `1px solid ${token.colorBorderSecondary}`, 
+          <div style={{
+            padding: `${token.paddingMD}px ${token.paddingLG}px`,
+            borderTop: `1px solid ${token.colorBorderSecondary}`,
             backgroundColor: token.colorBgContainer,
             display: 'flex',
             flexWrap: 'wrap',
@@ -232,13 +232,13 @@ const SchedulePage: React.FC = () => {
         onCancel={() => setIsAddDialogOpen(false)}
         confirmLoading={isCreating}
         okText="Create"
-        destroyOnClose
+        destroyOnHidden
       >
         <Form
           form={form}
           layout="vertical"
           onFinish={handleCreate}
-          initialValues={{ 
+          initialValues={{
             serviceType: 'SALES_CONSULTATION',
             startTime: dayjs()
           }}

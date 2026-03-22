@@ -36,7 +36,7 @@ export const AddVehicleDialog: React.FC<AddVehicleDialogProps> = ({ dealershipId
       onCancel={() => onOpenChange(false)}
       confirmLoading={loading}
       okText="Add Vehicle"
-      destroyOnClose
+      destroyOnHidden
     >
       <Form
         form={form}
@@ -66,7 +66,7 @@ export const AddVehicleDialog: React.FC<AddVehicleDialogProps> = ({ dealershipId
             </Form.Item>
           </Col>
         </Row>
-        
+
         <Form.Item
           label="Year"
           name="year"

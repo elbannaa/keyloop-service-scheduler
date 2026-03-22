@@ -36,7 +36,7 @@ export const AddTechnicianDialog: React.FC<AddTechnicianDialogProps> = ({ dealer
       onCancel={() => onOpenChange(false)}
       confirmLoading={loading}
       okText="Add Technician"
-      destroyOnClose
+      destroyOnHidden
     >
       <Form
         form={form}

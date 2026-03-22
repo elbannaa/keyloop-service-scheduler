@@ -6,21 +6,21 @@ import {
   fetchVehicles,
   removeVehicle,
 } from '@/store/dealershipsSlice';
-import { 
-  Modal, 
-  Tabs, 
-  Table, 
-  Button, 
-  Badge, 
-  Space, 
-  Typography, 
-  Popconfirm, 
+import {
+  Modal,
+  Tabs,
+  Table,
+  Button,
+  Badge,
+  Space,
+  Typography,
+  Popconfirm,
   message,
 } from 'antd';
-import { 
-  DeleteOutlined, 
-  UserAddOutlined, 
-  CarOutlined, 
+import {
+  DeleteOutlined,
+  UserAddOutlined,
+  CarOutlined,
   InfoCircleOutlined,
 } from '@ant-design/icons';
 import { AddTechnicianDialog } from './AddTechnicianDialog';
@@ -84,9 +84,9 @@ export const ManageResourcesDialog: React.FC<ManageResourcesDialogProps> = ({
       dataIndex: 'isActive',
       key: 'status',
       render: (isActive: boolean) => (
-        <Badge 
-          status={isActive ? 'success' : 'default'} 
-          text={isActive ? 'Active' : 'Away'} 
+        <Badge
+          status={isActive ? 'success' : 'default'}
+          text={isActive ? 'Active' : 'Away'}
         />
       ),
     },
@@ -103,10 +103,10 @@ export const ManageResourcesDialog: React.FC<ManageResourcesDialogProps> = ({
           cancelText="No"
           okButtonProps={{ danger: true }}
         >
-          <Button 
-            type="text" 
-            danger 
-            icon={<DeleteOutlined />} 
+          <Button
+            type="text"
+            danger
+            icon={<DeleteOutlined />}
           />
         </Popconfirm>
       ),
@@ -140,10 +140,10 @@ export const ManageResourcesDialog: React.FC<ManageResourcesDialogProps> = ({
           cancelText="No"
           okButtonProps={{ danger: true }}
         >
-          <Button 
-            type="text" 
-            danger 
-            icon={<DeleteOutlined />} 
+          <Button
+            type="text"
+            danger
+            icon={<DeleteOutlined />}
           />
         </Popconfirm>
       ),
@@ -160,22 +160,22 @@ export const ManageResourcesDialog: React.FC<ManageResourcesDialogProps> = ({
         </span>
       ),
       children: (
-        <Space direction="vertical" style={{ width: '100%' }} size={16}>
+        <Space orientation="vertical" style={{ width: '100%' }} size={16}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Text type="secondary" strong style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Staff Roster
             </Text>
-            <Button 
-              type="primary" 
-              icon={<UserAddOutlined />} 
+            <Button
+              type="primary"
+              icon={<UserAddOutlined />}
               onClick={() => setIsAddTechOpen(true)}
             >
               Add Technician
             </Button>
           </div>
-          <Table 
-            columns={techColumns} 
-            dataSource={technicians} 
+          <Table
+            columns={techColumns}
+            dataSource={technicians}
             rowKey="id"
             loading={subResourceLoading && technicians.length === 0}
             pagination={false}
@@ -193,22 +193,22 @@ export const ManageResourcesDialog: React.FC<ManageResourcesDialogProps> = ({
         </span>
       ),
       children: (
-        <Space direction="vertical" style={{ width: '100%' }} size={16}>
+        <Space orientation="vertical" style={{ width: '100%' }} size={16}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Text type="secondary" strong style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Fleet Management
             </Text>
-            <Button 
-              type="primary" 
-              icon={<CarOutlined />} 
+            <Button
+              type="primary"
+              icon={<CarOutlined />}
               onClick={() => setIsAddVehOpen(true)}
             >
               Add Vehicle
             </Button>
           </div>
-          <Table 
-            columns={vehicleColumns} 
-            dataSource={vehicles} 
+          <Table
+            columns={vehicleColumns}
+            dataSource={vehicles}
             rowKey="id"
             loading={subResourceLoading && vehicles.length === 0}
             pagination={false}
@@ -232,12 +232,12 @@ export const ManageResourcesDialog: React.FC<ManageResourcesDialogProps> = ({
         onCancel={() => onOpenChange(false)}
         footer={null}
         width={750}
-        destroyOnClose
+        destroyOnHidden
       >
-        <Tabs 
-          activeKey={activeTab} 
-          onChange={setActiveTab} 
-          items={items} 
+        <Tabs
+          activeKey={activeTab}
+          onChange={setActiveTab}
+          items={items}
           style={{ marginTop: 16 }}
         />
       </Modal>

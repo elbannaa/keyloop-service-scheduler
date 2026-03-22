@@ -56,17 +56,17 @@ export const AssignManagerDialog: React.FC<AssignManagerDialogProps> = ({
       confirmLoading={submitting}
       okText="Assign Manager"
       okButtonProps={{ disabled: !selectedManagerId || usersLoading }}
-      destroyOnClose
+      destroyOnHidden
     >
-      <Space direction="vertical" size={24} style={{ width: '100%', marginTop: 24 }}>
-        <Space direction="vertical" size={4} style={{ width: '100%' }}>
+      <Space orientation="vertical" size={24} style={{ width: '100%', marginTop: 24 }}>
+        <Space orientation="vertical" size={4} style={{ width: '100%' }}>
           <Text strong style={{ fontSize: 12 }}>Dealership</Text>
           <div style={{ padding: '8px 12px', backgroundColor: '#f5f5f5', borderRadius: 4, fontSize: 13 }}>
             {dealershipName}
           </div>
         </Space>
 
-        <Space direction="vertical" size={4} style={{ width: '100%' }}>
+        <Space orientation="vertical" size={4} style={{ width: '100%' }}>
           <Text strong style={{ fontSize: 12 }}>Select Manager</Text>
           <Select
             style={{ width: '100%' }}

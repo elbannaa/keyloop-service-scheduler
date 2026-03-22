@@ -9,7 +9,7 @@ const dealershipsService = new DealershipsService();
 export class DealershipsController {
   async createDealership(req: AuthRequest, res: Response): Promise<void> {
     try {
-      const { name, address } = req.body;
+      const { name, address, supportedServices } = req.body;
 
       if (!name || !address) {
         const response: ApiResponse<null> = {
@@ -22,7 +22,7 @@ export class DealershipsController {
         return;
       }
 
-      const dealership = await dealershipsService.createDealership({ name, address });
+      const dealership = await dealershipsService.createDealership({ name, address, supportedServices });
       const responseAPI: ApiResponse<{ dealership: typeof dealership }> = {
         success: true,
         code: 201,
@@ -99,7 +99,7 @@ export class DealershipsController {
   async updateDealership(req: AuthRequest, res: Response): Promise<void> {
     const id = req.params['id'] as string;
     try {
-      const { name, address, phone } = req.body;
+      const { name, address, supportedServices } = req.body;
 
       if (name === undefined && address === undefined) {
         const response: ApiResponse<null> = {
@@ -116,7 +116,7 @@ export class DealershipsController {
         id,
         req.user!.id,
         req.user!.role,
-        { name, address }
+        { name, address, supportedServices }
       );
 
       const responseAPI: ApiResponse<{ dealership: typeof dealership }> = {

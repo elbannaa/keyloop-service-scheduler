@@ -78,7 +78,7 @@
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
-  
+
   --radius-lg: var(--radius);
   --text-xxs: 0.625rem;
 }
@@ -93,4 +93,8 @@
     color: hsl(var(--foreground));
     font-family: inherit;
   }
+}
+
+.ant-table-container {
+  overflow: auto;
 }

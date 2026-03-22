@@ -13,6 +13,7 @@ export interface DealershipData {
     name: string;
     email: string;
   };
+  supportedServices: string[];
   _count?: {
     technicians: number;
     vehicles: number;
@@ -72,7 +73,7 @@ export const fetchDealerships = createAsyncThunk(
 
 export const createDealership = createAsyncThunk(
   'dealerships/create',
-  async (data: { name: string; address: string }, { rejectWithValue, dispatch }) => {
+  async (data: { name: string; address: string; supportedServices?: string[] }, { rejectWithValue, dispatch }) => {
     try {
       await api.post(API_ROUTES.DEALERSHIPS, data);
       dispatch(fetchDealerships());
@@ -104,7 +105,7 @@ export const toggleDealershipStatus = createAsyncThunk(
 export const updateDealership = createAsyncThunk(
   'dealerships/update',
   async (
-    { id, data }: { id: string; data: { name: string; address: string } },
+    { id, data }: { id: string; data: { name?: string; address?: string; supportedServices?: string[] } },
     { rejectWithValue, dispatch }
   ) => {
     try {

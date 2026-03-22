@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { fetchDealerships, toggleDealershipStatus, updateDealership } from '@/store/dealershipsSlice';
+import { fetchDealerships, toggleDealershipStatus, updateDealership, fetchVehicles } from '@/store/dealershipsSlice';
 import {
   Table,
   Input,
@@ -13,7 +13,9 @@ import {
   Row,
   Col,
   Tooltip,
-  theme as antdTheme
+  theme as antdTheme,
+  Tag,
+  Select
 } from 'antd';
 import {
   SearchOutlined,
@@ -28,8 +30,10 @@ import {
   UserOutlined,
   RetweetOutlined,
   GlobalOutlined,
-  CarOutlined
+  CarOutlined,
+  PhoneOutlined
 } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import { CreateDealershipDialog } from '@/components/forms/CreateDealershipDialog';
 import { ManageResourcesDialog } from '@/components/forms/ManageResourcesDialog';
 import { AssignManagerDialog } from '@/components/forms/AssignManagerDialog';
@@ -40,7 +44,8 @@ const { Text } = Typography;
 
 const DealershipsPage: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { data: dealerships, loading, error } = useAppSelector((state) => state.dealerships);
+  const navigate = useNavigate();
+  const { data: dealerships, loading, error, vehicles, subResourceLoading } = useAppSelector((state) => state.dealerships);
   const { user } = useAppSelector((state) => state.auth);
   const { token } = antdTheme.useToken();
 
@@ -49,7 +54,7 @@ const DealershipsPage: React.FC = () => {
   const [manageResource, setManageResource] = useState<{ id: string, name: string } | null>(null);
   const [assignManagerModal, setAssignManagerModal] = useState<{ id: string; name: string; managerId: string | null } | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ name: '', address: '' });
+  const [editForm, setEditForm] = useState({ name: '', address: '', supportedServices: [] as string[] });
 
   const canManage = user?.role === Role.ADMIN || user?.role === 'MANAGER';
 
@@ -67,7 +72,7 @@ const DealershipsPage: React.FC = () => {
 
   const handleStartEdit = (d: any) => {
     setEditingId(d.id);
-    setEditForm({ name: d.name, address: d.address });
+    setEditForm({ name: d.name, address: d.address, supportedServices: d.supportedServices || [] });
   };
 
   const handleSaveEdit = async (id: string) => {
@@ -120,10 +125,38 @@ const DealershipsPage: React.FC = () => {
       title: 'Manager',
       key: 'manager',
       render: (_: any, d: any) => (
-        <Space direction="vertical" size={0}>
+        <Space orientation="vertical" size={0}>
           <Text strong style={{ fontSize: 12 }}>{d.manager?.name || 'Unassigned'}</Text>
           {d.manager?.email && <Text type="secondary" style={{ fontSize: 11 }}>{d.manager.email}</Text>}
         </Space>
+      ),
+    },
+    {
+      title: 'Supported Services',
+      key: 'supportedServices',
+      responsive: ['lg' as const],
+      render: (_: any, d: any) => (
+        editingId === d.id ? (
+          <Select
+            mode="multiple"
+            size="small"
+            style={{ width: '100%' }}
+            value={editForm.supportedServices}
+            onChange={(val: string[]) => setEditForm({ ...editForm, supportedServices: val })}
+          >
+            <Select.Option value="NEW_CAR_CONSULTATION">New Car Consultation</Select.Option>
+            <Select.Option value="VEHICLE_REPAIR">Vehicle Repair</Select.Option>
+            <Select.Option value="VEHICLE_MAINTENANCE">Vehicle Maintenance</Select.Option>
+          </Select>
+        ) : (
+          <Space size={[0, 4]} wrap>
+            {d.supportedServices?.map((s: string) => (
+              <Tag key={s} color="blue" style={{ fontSize: 10 }}>
+                {s.replace(/_/g, ' ')}
+              </Tag>
+            ))}
+          </Space>
+        )
       ),
     },
     {
@@ -163,8 +196,22 @@ const DealershipsPage: React.FC = () => {
       title: 'Actions',
       key: 'actions',
       align: 'right' as const,
-      hidden: !canManage,
       render: (_: any, d: any) => {
+        if (user?.role === Role.USER) {
+          return (
+            <Button
+              type="primary"
+              size="small"
+              icon={<PhoneOutlined />}
+              onClick={() => navigate('/booking', { state: { dealershipId: d.id, dealershipName: d.name } })}
+            >
+              Contact
+            </Button>
+          );
+        }
+
+        if (!canManage) return null;
+
         if (editingId === d.id) {
           return (
             <Space>
@@ -222,8 +269,27 @@ const DealershipsPage: React.FC = () => {
     },
   ];
 
+  const expandedRowRender = () => {
+    const vehicleColumns = [
+      { title: 'Make', dataIndex: 'make', key: 'make' },
+      { title: 'Model', dataIndex: 'model', key: 'model' },
+      { title: 'Year', dataIndex: 'year', key: 'year' },
+    ];
+
+    return (
+      <Table
+        columns={vehicleColumns}
+        dataSource={vehicles}
+        pagination={false}
+        loading={subResourceLoading}
+        size="small"
+        rowKey="id"
+      />
+    );
+  };
+
   return (
-    <Space direction="vertical" size={token.paddingLG} style={{ width: '100%', paddingBottom: token.paddingLG }}>
+    <Space orientation="vertical" size={token.paddingLG} style={{ width: '100%', paddingBottom: token.paddingLG }}>
       <Row gutter={[token.paddingMD, token.paddingMD]} align="middle" justify="space-between">
         <Col xs={24} sm={12} md={8}>
           <Input
@@ -278,10 +344,18 @@ const DealershipsPage: React.FC = () => {
         overflow: 'hidden'
       }}>
         <Table
-          columns={columns.filter(c => !c.hidden)}
+          columns={columns}
           dataSource={dealerships}
           rowKey="id"
           loading={loading}
+          expandable={{
+            expandedRowRender,
+            onExpand: (expanded, record) => {
+              if (expanded) {
+                dispatch(fetchVehicles(record.id));
+              }
+            },
+          }}
           pagination={{
             pageSize: 10,
             showSizeChanger: false,

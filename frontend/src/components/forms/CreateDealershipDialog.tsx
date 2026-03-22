@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useAppDispatch } from '@/store/hooks';
 import { createDealership } from '@/store/dealershipsSlice';
-import { Modal, Form, Input, message } from 'antd';
+import { Modal, Form, Input, message, Select } from 'antd';
+import { ServiceType } from '@/store/appointmentsSlice';
 
 interface CreateDealershipDialogProps {
   open: boolean;
@@ -13,7 +14,7 @@ export const CreateDealershipDialog: React.FC<CreateDealershipDialogProps> = ({ 
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
 
-  const handleSubmit = async (values: { name: string; address: string }) => {
+  const handleSubmit = async (values: { name: string; address: string; supportedServices: string[] }) => {
     setLoading(true);
     try {
       await dispatch(createDealership(values)).unwrap();
@@ -35,7 +36,7 @@ export const CreateDealershipDialog: React.FC<CreateDealershipDialogProps> = ({ 
       onCancel={() => onOpenChange(false)}
       confirmLoading={loading}
       okText="Add Dealership"
-      destroyOnClose
+      destroyOnHidden
     >
       <Form
         form={form}
@@ -58,6 +59,22 @@ export const CreateDealershipDialog: React.FC<CreateDealershipDialogProps> = ({ 
           rules={[{ required: true, message: 'Please input location address!' }]}
         >
           <Input placeholder="123 Main St, London" />
+        </Form.Item>
+
+        <Form.Item
+          label="Supported Services"
+          name="supportedServices"
+          initialValue={[
+            ServiceType.NEW_CAR_CONSULTATION,
+            ServiceType.VEHICLE_REPAIR,
+            ServiceType.VEHICLE_MAINTENANCE
+          ]}
+        >
+          <Select mode="multiple" placeholder="Select supported services">
+            <Select.Option value={ServiceType.NEW_CAR_CONSULTATION}>New Car Consultation</Select.Option>
+            <Select.Option value={ServiceType.VEHICLE_REPAIR}>Vehicle Repair</Select.Option>
+            <Select.Option value={ServiceType.VEHICLE_MAINTENANCE}>Vehicle Maintenance</Select.Option>
+          </Select>
         </Form.Item>
       </Form>
     </Modal>

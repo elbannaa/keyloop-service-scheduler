@@ -42,25 +42,25 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({ user, open, onOp
     }
   };
 
-    const { token } = theme.useToken();
-  
-    return (
-      <Modal
-        title="Edit User"
-        open={open}
-        onOk={handleOk}
-        onCancel={() => onOpenChange(false)}
-        confirmLoading={loading}
-        okText="Save Changes"
-        destroyOnClose
+  const { token } = theme.useToken();
+
+  return (
+    <Modal
+      title="Edit User"
+      open={open}
+      onOk={handleOk}
+      onCancel={() => onOpenChange(false)}
+      confirmLoading={loading}
+      okText="Save Changes"
+      destroyOnHidden
+    >
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={onFinish}
+        requiredMark={false}
+        style={{ marginTop: token.paddingLG }}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={onFinish}
-          requiredMark={false}
-          style={{ marginTop: token.paddingLG }}
-        >
         <Form.Item label="Email (Read-only)">
           <Input value={user?.email || ''} disabled />
         </Form.Item>

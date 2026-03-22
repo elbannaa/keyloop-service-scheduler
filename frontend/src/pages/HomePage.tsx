@@ -1,17 +1,17 @@
 import React from 'react';
 import { useAppSelector } from '@/store/hooks';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Typography, 
-  Button, 
-  Card, 
-  Row, 
-  Col, 
-  Space, 
-  theme 
+import {
+  Typography,
+  Button,
+  Card,
+  Row,
+  Col,
+  Space,
+  theme
 } from 'antd';
-import { 
-  ShopOutlined, 
+import {
+  ShopOutlined,
   TeamOutlined,
   CalendarOutlined,
   ArrowRightOutlined
@@ -37,17 +37,17 @@ const HomePage: React.FC = () => {
             {user?.role}
           </Text>
         </Paragraph>
-        
+
         <Space size={token.paddingMD} wrap>
-          <Button 
-            type="primary" 
-            icon={<CalendarOutlined />} 
+          <Button
+            type="primary"
+            icon={<CalendarOutlined />}
             onClick={() => navigate('/booking')}
             style={{ fontWeight: 600 }}
           >
             Manage Appointments
           </Button>
-          <Button 
+          <Button
             onClick={() => navigate('/schedule')}
           >
             View Schedule
@@ -57,12 +57,12 @@ const HomePage: React.FC = () => {
 
       <Row gutter={[token.paddingLG, token.paddingLG]} justify="center">
         <Col xs={24} sm={12} md={10} lg={8}>
-          <Card 
-            hoverable 
+          <Card
+            hoverable
             style={{ height: '100%', borderRadius: token.borderRadiusLG }}
             cover={
-              <div style={{ 
-                height: 120, 
+              <div style={{
+                height: 120,
                 background: `linear-gradient(135deg, ${token.colorPrimary}22 0%, ${token.colorPrimary}11 100%)`,
                 display: 'flex',
                 alignItems: 'center',
@@ -73,10 +73,10 @@ const HomePage: React.FC = () => {
             }
             onClick={() => navigate('/dealerships')}
           >
-            <Card.Meta 
+            <Card.Meta
               title={<Title level={4}>Dealerships</Title>}
               description={
-                <Space direction="vertical" size={token.paddingSM}>
+                <Space orientation="vertical" size={token.paddingSM}>
                   <Text type="secondary">View and manage service dealerships in your network.</Text>
                   <Button type="link" style={{ padding: 0 }}>
                     Go to Dealerships <ArrowRightOutlined />
@@ -89,12 +89,12 @@ const HomePage: React.FC = () => {
 
         {user?.role === Role.ADMIN && (
           <Col xs={24} sm={12} md={10} lg={8}>
-            <Card 
-              hoverable 
+            <Card
+              hoverable
               style={{ height: '100%', borderRadius: token.borderRadiusLG }}
               cover={
-                <div style={{ 
-                  height: 120, 
+                <div style={{
+                  height: 120,
                   background: `linear-gradient(135deg, ${token.colorInfoHover}22 0%, ${token.colorInfoHover}11 100%)`,
                   display: 'flex',
                   alignItems: 'center',
@@ -105,10 +105,10 @@ const HomePage: React.FC = () => {
               }
               onClick={() => navigate('/users')}
             >
-              <Card.Meta 
+              <Card.Meta
                 title={<Title level={4}>Manage Users</Title>}
                 description={
-                  <Space direction="vertical" size={token.paddingSM}>
+                  <Space orientation="vertical" size={token.paddingSM}>
                     <Text type="secondary">Manage employee accounts and system access levels.</Text>
                     <Button type="link" style={{ padding: 0 }}>
                       Go to Users <ArrowRightOutlined />

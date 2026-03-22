@@ -31,26 +31,26 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onOpen
     }
   };
 
-    const { token } = theme.useToken();
-  
-    return (
-      <Modal
-        title="Create New User"
-        open={open}
-        onOk={handleOk}
-        onCancel={() => onOpenChange(false)}
-        confirmLoading={loading}
-        okText="Create User"
-        destroyOnClose
+  const { token } = theme.useToken();
+
+  return (
+    <Modal
+      title="Create New User"
+      open={open}
+      onOk={handleOk}
+      onCancel={() => onOpenChange(false)}
+      confirmLoading={loading}
+      okText="Create User"
+      destroyOnHidden
+    >
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={onFinish}
+        initialValues={{ role: 'USER' }}
+        requiredMark={false}
+        style={{ marginTop: token.paddingLG }}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={onFinish}
-          initialValues={{ role: 'USER' }}
-          requiredMark={false}
-          style={{ marginTop: token.paddingLG }}
-        >
         <Form.Item
           label="Full Name"
           name="name"
@@ -75,11 +75,11 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onOpen
           name="role"
           rules={[{ required: true, message: 'Please select a role!' }]}
         >
-          <Select>
-            <Select.Option value="USER">User</Select.Option>
-            <Select.Option value="MANAGER">Manager</Select.Option>
-            <Select.Option value="ADMIN">Admin</Select.Option>
-          </Select>
+          <Select options={[
+            { value: 'USER', label: 'User' },
+            { value: 'MANAGER', label: 'Manager' },
+            { value: 'ADMIN', label: 'Admin' }
+          ]} />
         </Form.Item>
 
         <Form.Item

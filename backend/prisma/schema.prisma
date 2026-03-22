@@ -38,6 +38,7 @@ model Dealership {
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
   manager     User?        @relation("DealershipManager", fields: [managerId], references: [id])
+  supportedServices ServiceType[] @default([NEW_CAR_CONSULTATION, VEHICLE_REPAIR, VEHICLE_MAINTENANCE]) @map("supported_services")
   technicians Technician[]
   vehicles    Vehicle[]
   appointments Appointment[]
@@ -75,9 +76,9 @@ model Vehicle {
 }
 
 enum ServiceType {
-  SALES_CONSULTATION
-  DETAILED_CONSULTATION
-  REPAIR_MAINTENANCE
+  NEW_CAR_CONSULTATION
+  VEHICLE_REPAIR
+  VEHICLE_MAINTENANCE
 }
 
 enum AppointmentStatus {

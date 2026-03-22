@@ -13,15 +13,16 @@ interface CreateAppointmentInput {
   vehicleId?: string; // Optional if customer selects a specific system vehicle
 }
 
+
 export class AppointmentsService {
   private getDuration(type: ServiceType): number {
     switch (type) {
-      case ServiceType.SALES_CONSULTATION:
-        return 60; // Defaulting to 60 for simplicity, can be dynamic
-      case ServiceType.DETAILED_CONSULTATION:
-        return 90;
-      case ServiceType.REPAIR_MAINTENANCE:
-        return 60;
+      case ServiceType.NEW_CAR_CONSULTATION:
+        return 45; // Consultation: 45 mins
+      case ServiceType.VEHICLE_REPAIR:
+        return 90; // Repair: 90 mins
+      case ServiceType.VEHICLE_MAINTENANCE:
+        return 60; // Maintenance: 60 mins
       default:
         return 60;
     }
@@ -51,7 +52,7 @@ export class AppointmentsService {
     });
 
     const availableSlots: Date[] = [];
-    
+
     // Work hours: 8 AM to 6 PM
     let currentSlot = dayStart.hour(8).minute(0).second(0);
     const workEnd = dayStart.hour(18).minute(0).second(0);
@@ -62,7 +63,7 @@ export class AppointmentsService {
       // Check if any technician is free
       const freeTechnicians = technicians.filter(tech => {
         // Better overlap check: (StartA < EndB) and (EndA > StartB)
-        const hasOverlap = appointments.some(app => 
+        const hasOverlap = appointments.some(app =>
           app.technicianId === tech.id &&
           currentSlot.isBefore(dayjs(app.endTime)) && slotEnd.isAfter(dayjs(app.startTime))
         );
@@ -71,23 +72,27 @@ export class AppointmentsService {
 
       let isAvailable = freeTechnicians.length > 0;
 
-      // If Detailed Consultation, check if any vehicle is free
-      if (serviceType === ServiceType.DETAILED_CONSULTATION) {
-        const freeVehicles = vehicles.filter(v => {
-          const hasOverlap = appointments.some(app => 
-            app.vehicleId === v.id &&
-            currentSlot.isBefore(dayjs(app.endTime)) && slotEnd.isAfter(dayjs(app.startTime))
-          );
-          return !hasOverlap;
-        });
-        isAvailable = isAvailable && freeVehicles.length > 0;
-      }
+       // Only NEW_CAR_CONSULTATION *always* requires a dealership vehicle (the car being consulted on)
+       // VEHICLE_REPAIR and VEHICLE_MAINTENANCE require a dealership "vehicle slot" (service bay)
+       // So all current service types require a vehicle slot in this model.
+       const requiresVehicle = true; 
 
-      if (isAvailable) {
-        availableSlots.push(currentSlot.toDate());
-      }
-
-      currentSlot = currentSlot.add(30, 'minute'); // 30 min intervals
+       if (requiresVehicle) {
+         const freeVehicles = vehicles.filter(v => {
+           const hasOverlap = appointments.some(app =>
+             app.vehicleId === v.id &&
+             currentSlot.isBefore(dayjs(app.endTime)) && slotEnd.isAfter(dayjs(app.startTime))
+           );
+           return !hasOverlap;
+         });
+         isAvailable = isAvailable && freeVehicles.length > 0;
+       }
+ 
+       if (isAvailable) {
+         availableSlots.push(currentSlot.toDate());
+       }
+ 
+       currentSlot = currentSlot.add(15, 'minute'); // 15 min intervals
     }
 
     return availableSlots;
@@ -124,13 +129,14 @@ export class AppointmentsService {
     }
 
     let assignedVehicleId: string | null = null;
+    const requiresVehicle = true; // All our service types now require a vehicle slot
 
-    if (input.serviceType === ServiceType.DETAILED_CONSULTATION) {
+    if (requiresVehicle) {
       const usedVehicleIds = new Set(overlapping.filter(a => a.vehicleId).map(a => a.vehicleId!));
       const availableVehicle = dealership.vehicles.find(v => !usedVehicleIds.has(v.id));
 
       if (!availableVehicle) {
-        throw new AppError(400, 'No vehicles available for this time slot');
+        throw new AppError(400, 'No vehicle slots available for this time slot');
       }
       assignedVehicleId = availableVehicle.id;
     }
