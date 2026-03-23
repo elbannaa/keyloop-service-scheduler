@@ -101,7 +101,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
             borderBottom: `1px solid ${token.colorBorderSecondary}`,
             position: 'sticky',
             top: 0,
-            zIndex: 1,
+            zIndex: 100,
             height: 64,
           }}
         >

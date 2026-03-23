@@ -24,7 +24,7 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
-import { DATE_TIME_DISPLAY_FORMAT, TIME_DISPLAY_FORMAT } from '@/constants';
+import { DATE_DISPLAY_FORMAT, TIME_DISPLAY_FORMAT } from '@/constants';
 import { fetchAllAppointments } from '@/store/appointmentsSlice';
 
 const { Title, Text } = Typography;
@@ -233,7 +233,7 @@ const SchedulePage: React.FC = () => {
             title={
               <Space>
                 <ClockCircleOutlined />
-                <span>Appointments for {selectedDate.format(DATE_TIME_DISPLAY_FORMAT)}</span>
+                <span>Appointments for {selectedDate.format(DATE_DISPLAY_FORMAT)}</span>
               </Space>
             }
             variant="borderless"

@@ -84,6 +84,14 @@ const AppointmentsPage: React.FC = () => {
 
   const columns = [
     {
+      title: 'ID',
+      dataIndex: 'id',
+      key: 'id',
+      render: (text: string) => (
+        <Text style={{ fontSize: 12, textTransform: 'uppercase' }}>{text.split('-')[0].toUpperCase()}</Text>
+      )
+    },
+    {
       title: 'Service Type',
       dataIndex: 'serviceType',
       key: 'serviceType',
