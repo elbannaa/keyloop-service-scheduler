@@ -9,12 +9,6 @@ const options: swaggerJsdoc.Options = {
       version: '1.0.0',
       description: 'Unified Service Scheduler — Backend API Documentation',
     },
-    servers: [
-      {
-        url: `${config.backendUrl}`,
-        description: 'Local server',
-      },
-    ],
     components: {
       securitySchemes: {
         bearerAuth: {
