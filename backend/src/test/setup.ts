@@ -1,9 +1,9 @@
 import { PrismaClient } from '@prisma/client';
 import { mockDeep, mockReset, DeepMockProxy } from 'jest-mock-extended';
-import prisma from '../lib/prisma';
+import prisma from '@/lib/prisma';
 
 // Mock Prisma
-jest.mock('../lib/prisma', () => ({
+jest.mock('@/lib/prisma', () => ({
   __esModule: true,
   default: mockDeep<PrismaClient>(),
 }));
@@ -11,7 +11,7 @@ jest.mock('../lib/prisma', () => ({
 export const prismaMock = prisma as unknown as DeepMockProxy<PrismaClient>;
 
 // Mock Redis globally
-jest.mock('../lib/redis', () => ({
+jest.mock('@/lib/redis', () => ({
   __esModule: true,
   default: {
     getbit: jest.fn(),

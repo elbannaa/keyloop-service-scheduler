@@ -20,8 +20,8 @@ import {
   LogoutOutlined,
   UserOutlined
 } from '@ant-design/icons';
-import { Sidebar } from './Sidebar';
-import { MobileNav } from './MobileNav';
+import { Sidebar } from '@/components/layout/Sidebar';
+import { MobileNav } from '@/components/layout/MobileNav';
 
 const { Header, Content } = Layout;
 const { Text } = Typography;

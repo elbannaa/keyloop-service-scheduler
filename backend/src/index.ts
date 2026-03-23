@@ -1,14 +1,14 @@
 import express from 'express';
 import cors from 'cors';
-import { config } from './config';
-import { requestLogger } from './middleware/logger';
-import { errorHandler } from './middleware/errorHandler';
+import { config } from '@/config';
+import { requestLogger } from '@/middleware/logger';
+import { errorHandler } from '@/middleware/errorHandler';
 import swaggerUi from 'swagger-ui-express';
-import { swaggerSpec } from './lib/swagger';
-import authRoutes from './modules/auth/auth.routes';
-import usersRoutes from './modules/users/users.routes';
-import dealershipsRoutes from './modules/dealerships/dealerships.routes';
-import appointmentsRoutes from './modules/appointments/appointments.routes';
+import { swaggerSpec } from '@/lib/swagger';
+import authRoutes from '@/modules/auth/auth.routes';
+import usersRoutes from '@/modules/users/users.routes';
+import dealershipsRoutes from '@/modules/dealerships/dealerships.routes';
+import appointmentsRoutes from '@/modules/appointments/appointments.routes';
 
 const app = express();
 
@@ -18,7 +18,7 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json());
-// app.use(requestLogger);
+app.use(requestLogger);
 
 // Swagger UI
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

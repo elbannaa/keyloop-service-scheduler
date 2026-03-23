@@ -1,9 +1,9 @@
 import { Response } from 'express';
-import { AuthRequest } from '../../middleware/auth';
-import { UsersService } from './users.service';
-import { AppError } from '../auth/auth.service';
+import { AuthRequest } from '@/middleware/auth';
+import { UsersService } from '@/modules/users/users.service';
+import { AppError } from '@/modules/auth/auth.service';
 import { Role } from '@prisma/client';
-import { ApiResponse, ErrorCode, Messages } from '../../constants/response';
+import { ApiResponse, ErrorCode, Messages } from '@/constants/response';
 
 const usersService = new UsersService();
 

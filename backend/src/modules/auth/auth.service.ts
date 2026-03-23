@@ -1,8 +1,8 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import prisma from '../../lib/prisma';
-import redis from '../../lib/redis';
-import { config } from '../../config';
+import prisma from '@/lib/prisma';
+import redis from '@/lib/redis';
+import { config } from '@/config';
 
 interface RegisterInput {
   email: string;

@@ -1,8 +1,8 @@
 import dayjs from 'dayjs';
-import prisma from '../../lib/prisma';
-import { AppError } from '../auth/auth.service';
+import prisma from '@/lib/prisma';
+import { AppError } from '@/modules/auth/auth.service';
 import { ServiceType, AppointmentStatus, Role } from '@prisma/client';
-import redis, { getRedisKey, getSlotRange } from '../../lib/redis';
+import redis, { getRedisKey, getSlotRange } from '@/lib/redis';
 
 interface CreateAppointmentInput {
   dealershipId: string;

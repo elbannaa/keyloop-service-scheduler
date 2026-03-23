@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { config } from '../config';
-import redis from '../lib/redis';
-import prisma from '../lib/prisma';
+import { config } from '@/config';
+import redis from '@/lib/redis';
+import prisma from '@/lib/prisma';
 
 export interface AuthRequest extends Request {
   user?: {

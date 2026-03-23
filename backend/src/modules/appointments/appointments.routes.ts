@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import * as appointmentsController from './appointments.controller';
-import { authGuard, requireRole } from '../../middleware/auth';
+import * as appointmentsController from '@/modules/appointments/appointments.controller';
+import { authGuard, requireRole } from '@/middleware/auth';
 import { Role } from '@prisma/client';
 
 const router = Router();

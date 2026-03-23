@@ -1,8 +1,8 @@
-import { DealershipsService } from './dealerships.service';
-import { prismaMock } from '../../test/setup';
-import { Role } from '../../constants/role';
+import { DealershipsService } from '@/modules/dealerships/dealerships.service';
+import { prismaMock } from '@/test/setup';
+import { Role } from '@/constants/role';
 import { ServiceType } from '@prisma/client';
-import { AppError } from '../auth/auth.service';
+import { AppError } from '@/modules/auth/auth.service';
 
 describe('DealershipsService', () => {
   let service: DealershipsService;

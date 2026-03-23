@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { AuthService, AppError } from './auth.service';
-import { AuthRequest } from '../../middleware/auth';
-import { ApiResponse, ErrorCode, Messages } from '../../constants/response';
+import { AuthService, AppError } from '@/modules/auth/auth.service';
+import { AuthRequest } from '@/middleware/auth';
+import { ApiResponse, ErrorCode, Messages } from '@/constants/response';
 
 const authService = new AuthService();
 

@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
-import prisma from '../../lib/prisma';
-import { AppError } from '../auth/auth.service';
+import prisma from '@/lib/prisma';
+import { AppError } from '@/modules/auth/auth.service';
 import { Role } from '@prisma/client';
 
 interface CreateUserInput {

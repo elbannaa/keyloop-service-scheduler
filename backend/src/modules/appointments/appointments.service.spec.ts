@@ -1,9 +1,9 @@
 import dayjs from 'dayjs';
-import { AppointmentsService } from './appointments.service';
-import { prismaMock } from '../../test/setup';
+import { AppointmentsService } from '@/modules/appointments/appointments.service';
+import { prismaMock } from '@/test/setup';
 import { ServiceType, AppointmentStatus, Role } from '@prisma/client';
-import redis from '../../lib/redis';
-import { AppError } from '../auth/auth.service';
+import redis from '@/lib/redis';
+import { AppError } from '@/modules/auth/auth.service';
 
 // Redis is mocked globally in src/test/setup.ts
 

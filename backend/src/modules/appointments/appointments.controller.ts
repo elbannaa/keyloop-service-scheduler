@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { AppointmentsService } from './appointments.service';
-import { Messages } from '../../constants/response';
+import { AppointmentsService } from '@/modules/appointments/appointments.service';
+import { Messages } from '@/constants/response';
 
 const appointmentsService = new AppointmentsService();
 

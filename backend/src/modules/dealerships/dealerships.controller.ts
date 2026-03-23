@@ -1,8 +1,8 @@
 import { Response } from 'express';
-import { AuthRequest } from '../../middleware/auth';
-import { DealershipsService } from './dealerships.service';
-import { AppError } from '../auth/auth.service';
-import { ApiResponse, ErrorCode, Messages } from '../../constants/response';
+import { AuthRequest } from '@/middleware/auth';
+import { DealershipsService } from '@/modules/dealerships/dealerships.service';
+import { AppError } from '@/modules/auth/auth.service';
+import { ApiResponse, ErrorCode, Messages } from '@/constants/response';
 
 const dealershipsService = new DealershipsService();
 
