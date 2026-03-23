@@ -78,10 +78,10 @@ describe('AppointmentsService', () => {
         vehicles: [{ id: 'bay-1' }],
       };
       prismaMock.dealership.findUnique.mockResolvedValue(mockDealership as any);
-      
+
       // Mock redis availability (returning 0 for getbit means free)
       (redis.getbit as jest.Mock).mockResolvedValue(0);
-      
+
       const mockAppointment = { id: 'app-1', ...input, status: AppointmentStatus.PENDING };
       prismaMock.appointment.create.mockResolvedValue(mockAppointment as any);
 
@@ -99,12 +99,20 @@ describe('AppointmentsService', () => {
         vehicles: [{ id: 'bay-1' }],
       };
       prismaMock.dealership.findUnique.mockResolvedValue(mockDealership as any);
-      
+
       // Mock redis busy (returning 1 for getbit means busy)
       (redis.getbit as jest.Mock).mockResolvedValue(1);
 
       await expect(service.createAppointment(input)).rejects.toThrow(
         new AppError(400, 'No technicians available for this time slot')
+      );
+    });
+
+    it('should throw error if user already has an overlapping appointment', async () => {
+      prismaMock.appointment.findFirst.mockResolvedValue({ id: 'existing-app' } as any);
+
+      await expect(service.createAppointment(input)).rejects.toThrow(
+        new AppError(400, 'You already have an appointment scheduled during this time range')
       );
     });
   });

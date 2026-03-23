@@ -120,6 +120,22 @@ export class AppointmentsService {
     const slots = getSlotRange(input.startTime, input.endTime);
     if (slots.length === 0) throw new AppError(400, 'Invalid time range');
 
+    // Check for overlapping appointments for the same user
+    const existingOverlap = await prisma.appointment.findFirst({
+      where: {
+        customerEmail: input.customerEmail,
+        status: { notIn: [AppointmentStatus.CANCELED, AppointmentStatus.REJECTED] },
+        AND: [
+          { startTime: { lt: endTime.toDate() } },
+          { endTime: { gt: startTime.toDate() } },
+        ],
+      },
+    });
+
+    if (existingOverlap) {
+      throw new AppError(400, 'You already have an appointment scheduled during this time range');
+    }
+
     // Verify dealership exists
     const dealership = await prisma.dealership.findUnique({
       where: { id: input.dealershipId },
