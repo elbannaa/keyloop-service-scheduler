@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { AppointmentsService } from './appointments.service';
-import { ServiceType } from '@prisma/client';
 import { Messages } from '../../constants/response';
 
 const appointmentsService = new AppointmentsService();
@@ -35,7 +34,6 @@ export const listAppointments = async (req: Request, res: Response) => {
     });
   }
 };
-
 
 export const createAppointment = async (req: Request, res: Response) => {
   try {
@@ -76,19 +74,15 @@ export const updateAppointment = async (req: Request, res: Response) => {
   }
 };
 
-export const listAvailability = async (req: Request, res: Response) => {
+export const cancelAppointment = async (req: Request, res: Response) => {
   try {
-    const { dealershipId, serviceType, date } = req.query;
-    const slots = await appointmentsService.listAvailability(
-      dealershipId as string,
-      serviceType as ServiceType,
-      new Date(date as string)
-    );
+    const user = (req as any).user;
+    const id = req.params.id as string;
+    await appointmentsService.cancelAppointment(id, user);
     res.json({
       success: true,
       code: 200,
       message: Messages.SUCCESS,
-      data: slots,
     });
   } catch (error: any) {
     res.status(error.statusCode || 500).json({
@@ -121,23 +115,6 @@ export const getSchedule = async (req: Request, res: Response) => {
   }
 };
 
-export const cancelAppointment = async (req: Request, res: Response) => {
-  try {
-    const id = req.params.id as string;
-    await appointmentsService.cancelAppointment(id);
-    res.json({
-      success: true,
-      code: 200,
-      message: Messages.SUCCESS,
-    });
-  } catch (error: any) {
-    res.status(error.statusCode || 500).json({
-      success: false,
-      code: error.statusCode || 500,
-      message: error.message || Messages.INTERNAL_ERROR,
-    });
-  }
-};
 export const checkAvailability = async (req: Request, res: Response) => {
   try {
     const { dealershipId, startTime, endTime } = req.query;

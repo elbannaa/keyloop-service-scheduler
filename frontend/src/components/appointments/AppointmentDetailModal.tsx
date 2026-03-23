@@ -7,6 +7,7 @@ import {
   Tag,
   Select,
   Button,
+  Popconfirm
 } from 'antd';
 import {
   CheckOutlined,
@@ -24,6 +25,7 @@ interface AppointmentDetailModalProps {
   appointment: any | null;
   onCancel: () => void;
   onUpdate: (id: string, data: any) => Promise<void>;
+  onCancelAppointment: (id: string) => Promise<void>;
   userRole?: string;
 }
 
@@ -43,6 +45,7 @@ const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
   appointment,
   onCancel,
   onUpdate,
+  onCancelAppointment,
   userRole,
 }) => {
   const [selectedTech, setSelectedTech] = useState<string | undefined>(undefined);
@@ -145,6 +148,25 @@ const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
             >
               Update Technician
             </Button>
+          </div>
+        )}
+        {userRole === Role.USER && (appointment.status === 'PENDING' || appointment.status === 'SCHEDULED') && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+            <Popconfirm
+              title="Cancel Appointment"
+              description="Are you sure you want to cancel this appointment?"
+              onConfirm={() => onCancelAppointment(appointment.id)}
+              okText="Yes"
+              cancelText="No"
+              okButtonProps={{ danger: true }}
+            >
+              <Button
+                danger
+                icon={<CloseOutlined />}
+              >
+                Cancel Appointment
+              </Button>
+            </Popconfirm>
           </div>
         )}
       </Space>
