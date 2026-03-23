@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { ApiResponse, ErrorCode, Messages } from '../constants/response';
+import { ApiResponse, ErrorCode, Messages } from '@/constants/response';
 
 export const errorHandler = (
   err: Error,

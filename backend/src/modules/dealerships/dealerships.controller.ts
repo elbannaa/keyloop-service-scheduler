@@ -1,12 +1,48 @@
 import { Response } from 'express';
-import { AuthRequest } from '../../middleware/auth';
-import { DealershipsService } from './dealerships.service';
-import { AppError } from '../auth/auth.service';
-import { ApiResponse, ErrorCode, Messages } from '../../constants/response';
+import { AuthRequest } from '@/middleware/auth';
+import { DealershipsService } from '@/modules/dealerships/dealerships.service';
+import { AppError } from '@/modules/auth/auth.service';
+import { ApiResponse, ErrorCode, Messages } from '@/constants/response';
 
 const dealershipsService = new DealershipsService();
 
 export class DealershipsController {
+  /**
+   * @swagger
+   * /api/dealerships:
+   *   post:
+   *     summary: Create a new dealership (Admin only)
+   *     tags: [Dealerships]
+   *     security:
+   *       - bearerAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - name
+   *               - address
+   *             properties:
+   *               name:
+   *                 type: string
+   *               address:
+   *                 type: string
+   *               supportedServices:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *     responses:
+   *       201:
+   *         description: Dealership created successfully
+   *       400:
+   *         description: Validation error
+   *       401:
+   *         description: Unauthorized
+   *       403:
+   *         description: Forbidden
+   */
   async createDealership(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { name, address, supportedServices } = req.body;
@@ -45,6 +81,41 @@ export class DealershipsController {
     }
   }
 
+  /**
+   * @swagger
+   * /api/dealerships:
+   *   get:
+   *     summary: List dealerships
+   *     tags: [Dealerships]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: query
+   *         name: vehicleMake
+   *         schema:
+   *           type: string
+   *       - in: query
+   *         name: vehicleModel
+   *         schema:
+   *           type: string
+   *       - in: query
+   *         name: vehicleYear
+   *         schema:
+   *           type: integer
+   *       - in: query
+   *         name: minTechnicians
+   *         schema:
+   *           type: integer
+   *       - in: query
+   *         name: search
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: List of dealerships
+   *       401:
+   *         description: Unauthorized
+   */
   async listDealerships(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { vehicleMake, vehicleModel, vehicleYear, minTechnicians, search } = req.query as Record<string, string>;
@@ -70,6 +141,28 @@ export class DealershipsController {
     }
   }
 
+  /**
+   * @swagger
+   * /api/dealerships/{id}:
+   *   get:
+   *     summary: Get dealership by ID
+   *     tags: [Dealerships]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: Dealership details
+   *       401:
+   *         description: Unauthorized
+   *       404:
+   *         description: Dealership not found
+   */
   async getDealership(req: AuthRequest, res: Response): Promise<void> {
     const id = req.params['id'] as string;
     try {
@@ -96,6 +189,42 @@ export class DealershipsController {
     }
   }
 
+  /**
+   * @swagger
+   * /api/dealerships/{id}:
+   *   patch:
+   *     summary: Update dealership info (Admin or Manager)
+   *     tags: [Dealerships]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               name:
+   *                 type: string
+   *               address:
+   *                 type: string
+   *               supportedServices:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *     responses:
+   *       200:
+   *         description: Dealership updated successfully
+   *       401:
+   *         description: Unauthorized
+   *       403:
+   *         description: Forbidden
+   */
   async updateDealership(req: AuthRequest, res: Response): Promise<void> {
     const id = req.params['id'] as string;
     try {
@@ -141,6 +270,39 @@ export class DealershipsController {
     }
   }
 
+  /**
+   * @swagger
+   * /api/dealerships/{id}/manager:
+   *   patch:
+   *     summary: Assign a manager to a dealership (Admin only)
+   *     tags: [Dealerships]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - managerId
+   *             properties:
+   *               managerId:
+   *                 type: string
+   *     responses:
+   *       200:
+   *         description: Manager assigned successfully
+   *       401:
+   *         description: Unauthorized
+   *       403:
+   *         description: Forbidden
+   */
   async assignManager(req: AuthRequest, res: Response): Promise<void> {
     const id = req.params['id'] as string;
     try {
@@ -180,6 +342,39 @@ export class DealershipsController {
     }
   }
 
+  /**
+   * @swagger
+   * /api/dealerships/{id}/status:
+   *   patch:
+   *     summary: Set dealership active/inactive status (Admin or Manager)
+   *     tags: [Dealerships]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - isActive
+   *             properties:
+   *               isActive:
+   *                 type: boolean
+   *     responses:
+   *       200:
+   *         description: Dealership status updated successfully
+   *       401:
+   *         description: Unauthorized
+   *       403:
+   *         description: Forbidden
+   */
   async setDealershipActive(req: AuthRequest, res: Response): Promise<void> {
     const id = req.params['id'] as string;
     try {
@@ -221,6 +416,39 @@ export class DealershipsController {
 
   // ─── Technicians ───────────────────────────────────────────────────
 
+  /**
+   * @swagger
+   * /api/dealerships/{id}/technicians:
+   *   post:
+   *     summary: Create a technician for a dealership (Admin or Manager)
+   *     tags: [Dealerships]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - name
+   *             properties:
+   *               name:
+   *                 type: string
+   *     responses:
+   *       201:
+   *         description: Technician created successfully
+   *       401:
+   *         description: Unauthorized
+   *       403:
+   *         description: Forbidden
+   */
   async createTechnician(req: AuthRequest, res: Response): Promise<void> {
     const dealershipId = req.params['id'] as string;
     try {
@@ -266,6 +494,26 @@ export class DealershipsController {
     }
   }
 
+  /**
+   * @swagger
+   * /api/dealerships/{id}/technicians:
+   *   get:
+   *     summary: List technicians for a dealership
+   *     tags: [Dealerships]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: List of technicians
+   *       401:
+   *         description: Unauthorized
+   */
   async listTechnicians(req: AuthRequest, res: Response): Promise<void> {
     const dealershipId = req.params['id'] as string;
     try {
@@ -294,6 +542,45 @@ export class DealershipsController {
 
   // ─── Vehicles ──────────────────────────────────────────────────────
 
+  /**
+   * @swagger
+   * /api/dealerships/{id}/vehicles:
+   *   post:
+   *     summary: Create a vehicle for a dealership (Admin or Manager)
+   *     tags: [Dealerships]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - make
+   *               - model
+   *               - year
+   *             properties:
+   *               make:
+   *                 type: string
+   *               model:
+   *                 type: string
+   *               year:
+   *                 type: integer
+   *     responses:
+   *       201:
+   *         description: Vehicle created successfully
+   *       401:
+   *         description: Unauthorized
+   *       403:
+   *         description: Forbidden
+   */
   async createVehicle(req: AuthRequest, res: Response): Promise<void> {
     const dealershipId = req.params['id'] as string;
     try {
@@ -350,6 +637,26 @@ export class DealershipsController {
     }
   }
 
+  /**
+   * @swagger
+   * /api/dealerships/{id}/vehicles:
+   *   get:
+   *     summary: List vehicles for a dealership
+   *     tags: [Dealerships]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: List of vehicles
+   *       401:
+   *         description: Unauthorized
+   */
   async listVehicles(req: AuthRequest, res: Response): Promise<void> {
     const dealershipId = req.params['id'] as string;
     try {
@@ -376,6 +683,33 @@ export class DealershipsController {
     }
   }
 
+  /**
+   * @swagger
+   * /api/dealerships/{id}/technicians/{technicianId}:
+   *   delete:
+   *     summary: Delete a technician (Admin or Manager)
+   *     tags: [Dealerships]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *       - in: path
+   *         name: technicianId
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: Technician deleted successfully
+   *       401:
+   *         description: Unauthorized
+   *       403:
+   *         description: Forbidden
+   */
   async deleteTechnician(req: AuthRequest, res: Response): Promise<void> {
     const dealershipId = req.params['id'] as string;
     const technicianId = req.params['technicianId'] as string;
@@ -408,6 +742,33 @@ export class DealershipsController {
     }
   }
 
+  /**
+   * @swagger
+   * /api/dealerships/{id}/vehicles/{vehicleId}:
+   *   delete:
+   *     summary: Delete a vehicle (Admin or Manager)
+   *     tags: [Dealerships]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *       - in: path
+   *         name: vehicleId
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: Vehicle deleted successfully
+   *       401:
+   *         description: Unauthorized
+   *       403:
+   *         description: Forbidden
+   */
   async deleteVehicle(req: AuthRequest, res: Response): Promise<void> {
     const dealershipId = req.params['id'] as string;
     const vehicleId = req.params['vehicleId'] as string;

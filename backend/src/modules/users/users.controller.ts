@@ -1,13 +1,54 @@
 import { Response } from 'express';
-import { AuthRequest } from '../../middleware/auth';
-import { UsersService } from './users.service';
-import { AppError } from '../auth/auth.service';
+import { AuthRequest } from '@/middleware/auth';
+import { UsersService } from '@/modules/users/users.service';
+import { AppError } from '@/modules/auth/auth.service';
 import { Role } from '@prisma/client';
-import { ApiResponse, ErrorCode, Messages } from '../../constants/response';
+import { ApiResponse, ErrorCode, Messages } from '@/constants/response';
 
 const usersService = new UsersService();
 
 export class UsersController {
+  /**
+   * @swagger
+   * /api/users:
+   *   post:
+   *     summary: Create a new user (Admin only)
+   *     tags: [Users]
+   *     security:
+   *       - bearerAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - email
+   *               - password
+   *               - name
+   *               - role
+   *             properties:
+   *               email:
+   *                 type: string
+   *                 format: email
+   *               password:
+   *                 type: string
+   *                 minimum: 6
+   *               name:
+   *                 type: string
+   *               role:
+   *                 type: string
+   *                 enum: [ADMIN, MANAGER, USER]
+   *     responses:
+   *       201:
+   *         description: User created successfully
+   *       400:
+   *         description: Validation error
+   *       401:
+   *         description: Unauthorized
+   *       403:
+   *         description: Forbidden
+   */
   async createUser(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { email, password, name, role } = req.body;
@@ -68,6 +109,42 @@ export class UsersController {
     }
   }
 
+  /**
+   * @swagger
+   * /api/users:
+   *   get:
+   *     summary: List all users (Admin only)
+   *     tags: [Users]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: query
+   *         name: role
+   *         schema:
+   *           type: string
+   *           enum: [ADMIN, MANAGER, USER]
+   *       - in: query
+   *         name: search
+   *         schema:
+   *           type: string
+   *       - in: query
+   *         name: page
+   *         schema:
+   *           type: integer
+   *           default: 1
+   *       - in: query
+   *         name: limit
+   *         schema:
+   *           type: integer
+   *           default: 10
+   *     responses:
+   *       200:
+   *         description: List of users
+   *       401:
+   *         description: Unauthorized
+   *       403:
+   *         description: Forbidden
+   */
   async listUsers(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { role, search, page, limit } = req.query as Record<string, string>;
@@ -91,6 +168,30 @@ export class UsersController {
     }
   }
 
+  /**
+   * @swagger
+   * /api/users/{id}:
+   *   get:
+   *     summary: Get user by ID (Admin only)
+   *     tags: [Users]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: User details
+   *       401:
+   *         description: Unauthorized
+   *       403:
+   *         description: Forbidden
+   *       404:
+   *         description: User not found
+   */
   async getUser(req: AuthRequest, res: Response): Promise<void> {
     try {
       const id = req.params['id'] as string;
@@ -118,6 +219,43 @@ export class UsersController {
     }
   }
 
+  /**
+   * @swagger
+   * /api/users/{id}:
+   *   patch:
+   *     summary: Update user (Admin only)
+   *     tags: [Users]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               name:
+   *                 type: string
+   *               role:
+   *                 type: string
+   *                 enum: [ADMIN, MANAGER, USER]
+   *     responses:
+   *       200:
+   *         description: User updated successfully
+   *       400:
+   *         description: Validation error
+   *       401:
+   *         description: Unauthorized
+   *       403:
+   *         description: Forbidden
+   *       404:
+   *         description: User not found
+   */
   async updateUser(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { name, role } = req.body;
@@ -168,6 +306,43 @@ export class UsersController {
     }
   }
 
+  /**
+   * @swagger
+   * /api/users/{id}/status:
+   *   patch:
+   *     summary: Set user active/inactive status (Admin only)
+   *     tags: [Users]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - isActive
+   *             properties:
+   *               isActive:
+   *                 type: boolean
+   *     responses:
+   *       200:
+   *         description: User status updated successfully
+   *       400:
+   *         description: Validation error
+   *       401:
+   *         description: Unauthorized
+   *       403:
+   *         description: Forbidden
+   *       404:
+   *         description: User not found
+   */
   async setUserActive(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { isActive } = req.body;

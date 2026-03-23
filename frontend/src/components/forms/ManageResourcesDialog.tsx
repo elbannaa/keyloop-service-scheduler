@@ -23,8 +23,8 @@ import {
   CarOutlined,
   InfoCircleOutlined,
 } from '@ant-design/icons';
-import { AddTechnicianDialog } from './AddTechnicianDialog';
-import { AddVehicleDialog } from './AddVehicleDialog';
+import { AddTechnicianDialog } from '@/components/forms/AddTechnicianDialog';
+import { AddVehicleDialog } from '@/components/forms/AddVehicleDialog';
 
 const { Text } = Typography;
 

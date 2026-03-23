@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { DealershipsController } from './dealerships.controller';
-import { authGuard, requireRole } from '../../middleware/auth';
+import { DealershipsController } from '@/modules/dealerships/dealerships.controller';
+import { authGuard, requireRole } from '@/middleware/auth';
 import { Role } from '@/constants/role';
 
 const router = Router();

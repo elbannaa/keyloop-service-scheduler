@@ -30,7 +30,6 @@ export interface TechnicianWithAppointments {
 }
 
 interface AppointmentsState {
-  availableSlots: string[];
   loading: boolean;
   error: string | null;
   bookingLoading: boolean;
@@ -40,7 +39,6 @@ interface AppointmentsState {
 }
 
 const initialState: AppointmentsState = {
-  availableSlots: [],
   loading: false,
   error: null,
   bookingLoading: false,
@@ -49,16 +47,16 @@ const initialState: AppointmentsState = {
   appointments: [],
 };
 
-export const fetchAvailability = createAsyncThunk(
-  'appointments/fetchAvailability',
-  async ({ dealershipId, serviceType, date }: { dealershipId: string; serviceType: ServiceTypeType; date: string }, { rejectWithValue }) => {
+export const fetchAllAppointments = createAsyncThunk(
+  'appointments/fetchAllAppointments',
+  async (filters: { dealershipId?: string; status?: string; date?: string; startDate?: string; endDate?: string } | void, { rejectWithValue }) => {
     try {
-      const response = await api.get(`/appointments/availability`, {
-        params: { dealershipId, serviceType, date },
+      const response = await api.get(`/appointments`, {
+        params: filters || {},
       });
-      return response.data.data.slots;
+      return response.data.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch slots');
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch appointments');
     }
   }
 );
@@ -84,16 +82,14 @@ export const createAppointment = createAsyncThunk(
   }
 );
 
-export const fetchSchedule = createAsyncThunk(
-  'appointments/fetchSchedule',
-  async ({ dealershipId, date }: { dealershipId: string; date: string }, { rejectWithValue }) => {
+export const updateAppointment = createAsyncThunk(
+  'appointments/updateAppointment',
+  async ({ id, data }: { id: string; data: any }, { rejectWithValue }) => {
     try {
-      const response = await api.get(`/appointments/schedule`, {
-        params: { dealershipId, date },
-      });
+      const response = await api.patch(`/appointments/${id}`, data);
       return response.data.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch schedule');
+      return rejectWithValue(error.response?.data?.message || 'Failed to update appointment');
     }
   }
 );
@@ -110,28 +106,16 @@ export const cancelAppointment = createAsyncThunk(
   }
 );
 
-export const fetchAllAppointments = createAsyncThunk(
-  'appointments/fetchAllAppointments',
-  async (filters: { dealershipId?: string; status?: string; date?: string; startDate?: string; endDate?: string } | void, { rejectWithValue }) => {
+export const fetchSchedule = createAsyncThunk(
+  'appointments/fetchSchedule',
+  async ({ dealershipId, date }: { dealershipId: string; date: string }, { rejectWithValue }) => {
     try {
-      const response = await api.get(`/appointments`, {
-        params: filters || {},
+      const response = await api.get(`/appointments/schedule`, {
+        params: { dealershipId, date },
       });
       return response.data.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch appointments');
-    }
-  }
-);
-
-export const updateAppointment = createAsyncThunk(
-  'appointments/updateAppointment',
-  async ({ id, data }: { id: string; data: any }, { rejectWithValue }) => {
-    try {
-      const response = await api.patch(`/appointments/${id}`, data);
-      return response.data.data;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to update appointment');
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch schedule');
     }
   }
 );
@@ -161,18 +145,6 @@ const appointmentsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchAvailability.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchAvailability.fulfilled, (state, action) => {
-        state.loading = false;
-        state.availableSlots = action.payload;
-      })
-      .addCase(fetchAvailability.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      })
       .addCase(createAppointment.pending, (state) => {
         state.bookingLoading = true;
         state.error = null;
@@ -225,7 +197,7 @@ const appointmentsSlice = createSlice({
       })
       .addCase(updateAppointment.fulfilled, (state, action) => {
         state.loading = false;
-        state.appointments = state.appointments.map(app => 
+        state.appointments = state.appointments.map(app =>
           app.id === action.payload.id ? action.payload : app
         );
       })
@@ -238,6 +210,9 @@ const appointmentsSlice = createSlice({
           ...tech,
           appointments: tech.appointments.filter(app => app.id !== action.payload)
         }));
+        state.appointments = state.appointments.map(app =>
+          app.id === action.payload ? { ...app, status: 'CANCELED' } : app
+        );
       });
   },
 });

@@ -20,8 +20,8 @@ import {
   LogoutOutlined,
   UserOutlined
 } from '@ant-design/icons';
-import { Sidebar } from './Sidebar';
-import { MobileNav } from './MobileNav';
+import { Sidebar } from '@/components/layout/Sidebar';
+import { MobileNav } from '@/components/layout/MobileNav';
 
 const { Header, Content } = Layout;
 const { Text } = Typography;
@@ -101,7 +101,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
             borderBottom: `1px solid ${token.colorBorderSecondary}`,
             position: 'sticky',
             top: 0,
-            zIndex: 1,
+            zIndex: 100,
             height: 64,
           }}
         >

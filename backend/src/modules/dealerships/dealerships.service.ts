@@ -1,6 +1,6 @@
-import prisma from '../../lib/prisma';
-import { AppError } from '../auth/auth.service';
-import { Role } from '../../constants/role';
+import prisma from '@/lib/prisma';
+import { AppError } from '@/modules/auth/auth.service';
+import { Role } from '@/constants/role';
 import { ServiceType } from '@prisma/client';
 
 interface CreateDealershipInput {

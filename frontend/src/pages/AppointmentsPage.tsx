@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { fetchAllAppointments, updateAppointment } from '@/store/appointmentsSlice';
+import { fetchAllAppointments, updateAppointment, cancelAppointment } from '@/store/appointmentsSlice';
 import { fetchDealerships } from '@/store/dealershipsSlice';
 import {
   Table,
@@ -71,6 +71,17 @@ const AppointmentsPage: React.FC = () => {
     }
   };
 
+  const handleCancelAppointment = async (id: string) => {
+    try {
+      await dispatch(cancelAppointment(id)).unwrap();
+      message.success('Appointment canceled successfully');
+      setDetailModal({ visible: false, appointment: null });
+      dispatch(fetchAllAppointments(filters));
+    } catch (err: any) {
+      message.error(err || 'Failed to cancel appointment');
+    }
+  };
+
   const getStatusTag = (status: string) => {
     switch (status) {
       case 'PENDING': return <Tag color="orange">PENDING</Tag>;
@@ -83,6 +94,14 @@ const AppointmentsPage: React.FC = () => {
   };
 
   const columns = [
+    {
+      title: 'ID',
+      dataIndex: 'id',
+      key: 'id',
+      render: (text: string) => (
+        <Text style={{ fontSize: 12, textTransform: 'uppercase' }}>{text.split('-')[0].toUpperCase()}</Text>
+      )
+    },
     {
       title: 'Service Type',
       dataIndex: 'serviceType',
@@ -234,6 +253,7 @@ const AppointmentsPage: React.FC = () => {
         appointment={detailModal.appointment}
         onCancel={() => setDetailModal({ visible: false, appointment: null })}
         onUpdate={handleUpdate}
+        onCancelAppointment={handleCancelAppointment}
         userRole={user?.role}
       />
     </Space>
