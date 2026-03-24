@@ -30,9 +30,7 @@ graph TB
         Redis[(Redis)]
     end
     
-    Users -->|HTTPS| API
-    API --> State
-    State --> UI
+    Users --> Frontend
     
     API --> Middleware
     Middleware --> Auth
@@ -136,9 +134,42 @@ sequenceDiagram
 | **Pino** | Low-overhead JSON logger for high-performance structured logging. |
 | **Nodemailer** | Handles transactional emails via SMTP. |
 
-## 3. Getting Started
+## 3. Observability
 
-### 3.1 Infrastructure (Docker)
+- **Logging**: Uses `pino` for structured JSON logging and `pino-http` for request tracing.
+- **Error Handling**: Centralized middleware catches all exceptions and returns standardized `ApiResponse` structures.
+
+## 4. GenAI Design Assistance
+
+This project followed a multi-step GenAI-assisted design and development strategy to transition from raw requirements to a functional system:
+
+### Step 1: Requirements & Feature Identification (ChatGPT + Thinking model)
+- **Role**: Business Analyst
+- **Goal**: Analyze the "Challenge Scenario" and set of requirements to identify main users, key functions, and features.
+- **Output**: A structured list of functionalities (e.g., Auth, Dealership Management, Resource Allocation, Booking Flow) suitable for hand-off to a Tech Lead.
+- **Review**: Manual verification of functions to ensure they align with the business goals before proceeding.
+
+### Step 2: Architecture & Tech Stack (Claude Opus)
+- **Role**: Solutions Architect (SA)
+- **Goal**: Suggest a scalable, cost-effective architecture and refine the technology stack.
+- **Visualization**: Used **Mermaid.js** for architectural diagrams to allow for easy iteration and visualization of data flow.
+- **Optimization**: Adjusted the tech stack to ensure a "free and fast" setup (e.g., using Prisma, Docker, and standard Express/Postgres).
+
+### Step 3: Guidelines & Boilerplate Generation (Gemini 3 Flash)
+- **Goal**: Rapidly scaffold the core application and establish coding standards.
+- **Process**: Leveraged AI to generate development rules and the initial infrastructure (Authentication and User Management), followed by manual adjustments to ensure the output met project-specific expectations.
+
+### Step 4: Iterative Implementation (Claude Sonnet + Gemini 3 Flash)
+- **Thinking**: **Claude Sonnet** was used for architecting complex logic and high-level problem solving.
+- **Coding**: **Gemini 3 Flash** was used for high-speed code generation of the two primary flows:
+  - **Availability Engine**: Checking available slots using Redis bitsets.
+  - **Booking Flow**: Atomic resource locking and appointment creation.
+
+---
+
+## 5. How to start
+
+### 5.1 Infrastructure (Docker)
 The project uses Docker Compose to manage PostgreSQL and Redis.
 ```bash
 docker-compose up -d
@@ -146,40 +177,35 @@ docker-compose up -d
 - **PostgreSQL**: `localhost:5432`
 - **Redis**: `localhost:6379`
 
-### 3.2 Backend Setup
+### 5.2 Backend Setup
 1. `cd backend`
 2. `npm install`
 3. `cp .env.example .env` (Configure `DATABASE_URL`, `REDIS_URL`, `JWT_SECRET`)
 4. `npx prisma migrate dev --name init`
-5. `npx prisma db seed`
+5. `npm run prisma:seed`
 6. `npm run dev` (API at `http://localhost:3001`)
 
-### 3.3 Frontend Setup
+### 5.3 Frontend Setup
 1. `cd frontend`
 2. `npm install`
 3. `npm run dev` (App at `http://localhost:5173`)
 
-### 3.4 Default Credentials
+### 5.4 Default Credentials
 - **Email**: `admin@mail.com`
 - **Password**: `password`
 
-## 4. Testing
+## 6. Testing
 
-### 4.1 Purpose
+### 6.1 Purpose
 Ensure reliability of core business logic, including resource allocation, constraint enforcement (e.g., no double-booking), and RBAC.
 
-### 4.2 Suite of Tests
+### 6.2 Suite of Tests
 - **Appointments Service**: Validates creation, listing (RBAC), and cancellation (resource release).
 - **Dealerships Service**: Tests CRUD, in-memory filtering, and permission checks.
 
-### 4.3 Execution
+### 6.3 Execution
 Run backend tests:
 ```bash
 cd backend
 npm test
 ```
-
-## 5. Observability
-
-- **Logging**: Uses `pino` for structured JSON logging and `pino-http` for request tracing.
-- **Error Handling**: Centralized middleware catches all exceptions and returns standardized `ApiResponse` structures.
