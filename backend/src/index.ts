@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { config } from '@/config';
+import { assertRuntimeConfig, config } from '@/config';
 import { requestLogger } from '@/middleware/logger';
 import { errorHandler } from '@/middleware/errorHandler';
 import swaggerUi from 'swagger-ui-express';
@@ -9,6 +9,8 @@ import authRoutes from '@/modules/auth/auth.routes';
 import usersRoutes from '@/modules/users/users.routes';
 import dealershipsRoutes from '@/modules/dealerships/dealerships.routes';
 import appointmentsRoutes from '@/modules/appointments/appointments.routes';
+
+assertRuntimeConfig();
 
 const app = express();
 
@@ -25,7 +27,13 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Health check
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'ok',
+    application: config.appName,
+    safeMode: config.safeMode,
+    outboundMail: config.mail.mode,
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // Routes
@@ -39,7 +47,8 @@ app.use(errorHandler);
 
 // Start server
 app.listen(config.port, () => {
-  console.log(`🚀 Server running`);
+  console.log(`🚀 ${config.appName} running on port ${config.port}`);
+  console.log(`🛡️ SAFE_MODE=${config.safeMode}; MAIL_MODE=${config.mail.mode}`);
 });
 
 export default app;
