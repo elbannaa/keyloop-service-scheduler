@@ -1,25 +1,25 @@
 import Redis from 'ioredis';
 import { config } from '@/config';
-
 import dayjs from 'dayjs';
 
 const redis = new Redis(config.redisUrl);
 
-// 24-hour booking system
-export const SLOTS_PER_HOUR = 4; // 15-min intervals
-export const TOTAL_SLOTS = 24 * SLOTS_PER_HOUR; // 96
+// These values preserve the current demo behavior by default, but are controlled by environment variables.
+export const SLOT_MINUTES = config.booking.slotMinutes;
+export const SLOTS_PER_HOUR = 60 / SLOT_MINUTES;
+export const TOTAL_SLOTS = 24 * SLOTS_PER_HOUR;
 
 export const timeToSlotIndex = (time: Date, isEnd: boolean = false): number | null => {
   const t = dayjs(time);
   const hour = t.hour();
   const minute = t.minute();
 
-  // Special case: if it's 00:00 of the NEXT day (or end of current day)
+  // Special case: if it is 00:00 of the next day (or the end of the current day).
   if (isEnd && hour === 0 && minute === 0) {
     return TOTAL_SLOTS;
   }
 
-  return hour * SLOTS_PER_HOUR + Math.floor(minute / 15);
+  return hour * SLOTS_PER_HOUR + Math.floor(minute / SLOT_MINUTES);
 };
 
 export const getSlotRange = (startTime: Date, endTime: Date): number[] => {
