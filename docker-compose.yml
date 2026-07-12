@@ -1,25 +1,33 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: scheduler-postgres
+    container_name: mynm-service-booking-postgres
     restart: unless-stopped
     ports:
-      - '5432:5432'
+      - '127.0.0.1:${POSTGRES_PORT:-5432}:5432'
     environment:
-      POSTGRES_USER: scheduler
-      POSTGRES_PASSWORD: scheduler123
-      POSTGRES_DB: scheduler_db
+      POSTGRES_USER: '${POSTGRES_USER:?Set POSTGRES_USER in the compose environment file}'
+      POSTGRES_PASSWORD: '${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the compose environment file}'
+      POSTGRES_DB: '${POSTGRES_DB:?Set POSTGRES_DB in the compose environment file}'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
+      interval: 5s
+      timeout: 5s
+      retries: 20
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
   redis:
     image: redis:7-alpine
-    container_name: scheduler-redis
+    container_name: mynm-service-booking-redis
     restart: unless-stopped
     ports:
-      - '6379:6379'
+      - '127.0.0.1:${REDIS_PORT:-6379}:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 20
     volumes:
       - redis_data:/data
 
