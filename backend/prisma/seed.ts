@@ -1,16 +1,20 @@
+import dotenv from 'dotenv';
 import { PrismaClient, Role } from '@prisma/client';
 import bcrypt from 'bcrypt';
+
+dotenv.config();
 
 const prisma = new PrismaClient();
 
 const seedAdmin = {
   email: process.env.SEED_SUPER_ADMIN_EMAIL,
   password: process.env.SEED_SUPER_ADMIN_PASSWORD,
-}
+  name: process.env.SEED_SUPER_ADMIN_NAME,
+};
 
 async function main() {
-  if (!seedAdmin.email || !seedAdmin.password) {
-    console.error('❌ Missing seed admin credentials');
+  if (!seedAdmin.email || !seedAdmin.password || !seedAdmin.name) {
+    console.error('❌ Missing seed administrator email, password, or name');
     process.exit(1);
   }
 
@@ -24,19 +28,19 @@ async function main() {
       data: {
         email: seedAdmin.email,
         password: hashedPassword,
-        name: 'System Admin',
+        name: seedAdmin.name,
         role: Role.ADMIN,
       },
     });
-    console.log(`✅ Admin user created: ${admin.email}`);
+    console.log(`✅ Administrator created: ${admin.email}`);
   } else {
-    console.log(`ℹ️  Admin user already exists: ${existingAdmin.email}`);
+    console.log(`ℹ️  Administrator already exists: ${existingAdmin.email}`);
   }
 }
 
 main()
-  .catch((e) => {
-    console.error('❌ Seed failed:', e);
+  .catch((error) => {
+    console.error('❌ Seed failed:', error);
     process.exit(1);
   })
   .finally(async () => {
