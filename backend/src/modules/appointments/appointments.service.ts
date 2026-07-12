@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { AppError } from '@/modules/auth/auth.service';
 import { ServiceType, AppointmentStatus, Role } from '@prisma/client';
 import redis, { getRedisKey, getSlotRange } from '@/lib/redis';
+import { config } from '@/config';
 
 interface CreateAppointmentInput {
   dealershipId: string;
@@ -113,8 +114,11 @@ export class AppointmentsService {
     if (endTime.isBefore(startTime) || endTime.isSame(startTime)) {
       throw new AppError(400, 'End time must be after start time');
     }
-    if (endTime.diff(startTime, 'hour', true) > 4) {
-      throw new AppError(400, 'Appointment duration cannot exceed 4 hours');
+    if (endTime.diff(startTime, 'minute', true) > config.booking.maxDurationMinutes) {
+      throw new AppError(
+        400,
+        `Appointment duration cannot exceed ${config.booking.maxDurationMinutes} minutes`
+      );
     }
 
     const slots = getSlotRange(input.startTime, input.endTime);
@@ -149,7 +153,7 @@ export class AppointmentsService {
       input.dealershipId,
       dateStr,
       'tech',
-      dealership.technicians.map(t => t.id),
+      dealership.technicians.map((technician) => technician.id),
       slots
     );
 
@@ -162,7 +166,7 @@ export class AppointmentsService {
       input.dealershipId,
       dateStr,
       'bay',
-      dealership.vehicles.map(v => v.id),
+      dealership.vehicles.map((vehicle) => vehicle.id),
       slots
     );
 
@@ -195,8 +199,9 @@ export class AppointmentsService {
     await this.markSlots(input.dealershipId, dateStr, 'tech', techId, slots, true);
     await this.markSlots(input.dealershipId, dateStr, 'bay', bayId, slots, true);
 
-    // TODO: Send email to manager for approval
-    console.log(`Email request sent to manager for appointment ${appointment.id}`);
+    console.info(
+      'Appointment created; outbound notifications remain suppressed until an approved MYNM channel is configured'
+    );
 
     return appointment;
   }
@@ -204,7 +209,7 @@ export class AppointmentsService {
   async updateAppointment(id: string, data: { status?: AppointmentStatus; technicianId?: string }) {
     const appointment = await prisma.appointment.findUnique({
       where: { id },
-      include: { technician: true }
+      include: { technician: true },
     });
     if (!appointment) throw new AppError(404, 'Appointment not found');
 
@@ -227,17 +232,48 @@ export class AppointmentsService {
       }
 
       // 2. Clear old technician slots in Redis
-      await this.markSlots(appointment.dealershipId, dateStr, 'tech', appointment.technicianId, slots, false);
+      await this.markSlots(
+        appointment.dealershipId,
+        dateStr,
+        'tech',
+        appointment.technicianId,
+        slots,
+        false
+      );
 
       // 3. Mark new technician slots in Redis
-      await this.markSlots(appointment.dealershipId, dateStr, 'tech', data.technicianId, slots, true);
+      await this.markSlots(
+        appointment.dealershipId,
+        dateStr,
+        'tech',
+        data.technicianId,
+        slots,
+        true
+      );
     }
 
     // Handle status changes (releasing resources if CANCELED or REJECTED)
-    if (data.status && (data.status === AppointmentStatus.CANCELED || data.status === AppointmentStatus.REJECTED)) {
-      await this.markSlots(appointment.dealershipId, dateStr, 'tech', data.technicianId || appointment.technicianId, slots, false);
+    if (
+      data.status &&
+      (data.status === AppointmentStatus.CANCELED || data.status === AppointmentStatus.REJECTED)
+    ) {
+      await this.markSlots(
+        appointment.dealershipId,
+        dateStr,
+        'tech',
+        data.technicianId || appointment.technicianId,
+        slots,
+        false
+      );
       if (appointment.vehicleId) {
-        await this.markSlots(appointment.dealershipId, dateStr, 'bay', appointment.vehicleId, slots, false);
+        await this.markSlots(
+          appointment.dealershipId,
+          dateStr,
+          'bay',
+          appointment.vehicleId,
+          slots,
+          false
+        );
       }
     }
 
@@ -248,11 +284,11 @@ export class AppointmentsService {
         technician: true,
         dealership: true,
         vehicle: true,
-      }
+      },
     });
   }
 
-  async cancelAppointment(id: string, user: { id: string, role: string, email: string }) {
+  async cancelAppointment(id: string, user: { id: string; role: string; email: string }) {
     const appointment = await prisma.appointment.findUnique({ where: { id } });
     if (!appointment) throw new AppError(404, 'Appointment not found');
 
@@ -270,9 +306,23 @@ export class AppointmentsService {
     });
 
     // Clear slots in Redis
-    await this.markSlots(appointment.dealershipId, dateStr, 'tech', appointment.technicianId, slots, false);
+    await this.markSlots(
+      appointment.dealershipId,
+      dateStr,
+      'tech',
+      appointment.technicianId,
+      slots,
+      false
+    );
     if (appointment.vehicleId) {
-      await this.markSlots(appointment.dealershipId, dateStr, 'bay', appointment.vehicleId, slots, false);
+      await this.markSlots(
+        appointment.dealershipId,
+        dateStr,
+        'bay',
+        appointment.vehicleId,
+        slots,
+        false
+      );
     }
 
     return updated;
@@ -327,11 +377,12 @@ export class AppointmentsService {
       slots
     );
 
-
     return !!bayId;
   }
 
-  private async getResources(dealershipId: string): Promise<{ isActive: boolean; techIds: string[]; bayIds: string[] }> {
+  private async getResources(
+    dealershipId: string
+  ): Promise<{ isActive: boolean; techIds: string[]; bayIds: string[] }> {
     const activeKey = getRedisKey.dealerActive(dealershipId);
     const techsKey = getRedisKey.dealerTechs(dealershipId);
     const baysKey = getRedisKey.dealerBays(dealershipId);
@@ -343,7 +394,7 @@ export class AppointmentsService {
 
       const [techIds, bayIds] = await Promise.all([
         redis.smembers(techsKey),
-        redis.smembers(baysKey)
+        redis.smembers(baysKey),
       ]);
 
       return { isActive: true, techIds, bayIds };
@@ -354,27 +405,29 @@ export class AppointmentsService {
       where: { id: dealershipId },
       include: {
         technicians: { where: { isActive: true }, select: { id: true } },
-        vehicles: { select: { id: true } }
+        vehicles: { select: { id: true } },
       },
     });
 
+    const cacheTtl = config.booking.resourceCacheTtlSeconds;
+
     if (!dealership || !dealership.isActive) {
-      await redis.set(activeKey, 'false', 'EX', 3600); // 1 hour
+      await redis.set(activeKey, 'false', 'EX', cacheTtl);
       return { isActive: false, techIds: [], bayIds: [] };
     }
 
-    const techIds = dealership.technicians.map(t => t.id);
-    const bayIds = dealership.vehicles.map(v => v.id);
+    const techIds = dealership.technicians.map((technician) => technician.id);
+    const bayIds = dealership.vehicles.map((vehicle) => vehicle.id);
 
     // Populate Redis
     const pipeline = redis.pipeline();
-    pipeline.set(activeKey, 'true', 'EX', 3600);
+    pipeline.set(activeKey, 'true', 'EX', cacheTtl);
     pipeline.del(techsKey);
     pipeline.del(baysKey);
     if (techIds.length > 0) pipeline.sadd(techsKey, ...techIds);
     if (bayIds.length > 0) pipeline.sadd(baysKey, ...bayIds);
-    pipeline.expire(techsKey, 3600);
-    pipeline.expire(baysKey, 3600);
+    pipeline.expire(techsKey, cacheTtl);
+    pipeline.expire(baysKey, cacheTtl);
     await pipeline.exec();
 
     return { isActive: true, techIds, bayIds };
